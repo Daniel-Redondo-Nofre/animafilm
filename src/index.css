@@ -1,0 +1,707 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   AnimaFilm — TEBEO ESPAÑOL 80s
+
+   CLARO  → el tebeo impreso: papel amarillento, tinta negra, offset seco.
+   OSCURO → el mismo tebeo de noche, a la luz de la tele: papel azul tinta,
+            sombras que dejan de ser negras y pasan a ser ámbar encendido,
+            viñetas que parecen paneles iluminados.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MODO CLARO — papel de tebeo
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:            #F3E9C8;
+  --bg-card:       #FDF6E3;
+  --bg-muted:      #E7D8AC;
+  --bg-input:      #FDF6E3;
+
+  --text:          #0D0D0D;
+  --text-muted:    #4A3A20;
+  --text-faint:    #7A6640;
+
+  --rojo:          #E8200A;
+  --amarillo:      #FFD600;
+  --azul:          #0044BB;
+
+  --accent:        #E8200A;
+  --accent-fg:     #FFD600;
+  --accent2:       #0044BB;
+  --accent2-fg:    #FFFFFF;
+
+  --header-bg:     #D91800;
+  --header-text:   #FFD600;
+  --header-border: #0D0D0D;
+  --header-glow:   none;
+
+  --border:        #0D0D0D;
+  --border-w:      3px;
+  --border-focus:  #0044BB;
+
+  /* Sombras: bloque sólido negro, sin desenfoque. Tinta seca. */
+  --sh-card:       4px 4px 0 #0D0D0D;
+  --sh-card-hover: 7px 7px 0 #0D0D0D;
+  --sh-btn:        3px 3px 0 #0D0D0D;
+  --sh-btn-hover:  5px 5px 0 #0D0D0D;
+  --sh-sm:         2px 2px 0 #0D0D0D;
+  --sh-modal:     10px 10px 0 #0D0D0D;
+
+  --overlay:       rgba(20,10,0,0.84);
+
+  /* Trama Ben-Day */
+  --dots:          rgba(13,13,13,0.10);
+  --dots-gap:      10px;
+  --dots-r:        1.5px;
+
+  /* Atmósfera (solo se activa en oscuro) */
+  --glow-veil:     transparent;
+  --img-filter:    none;
+
+  --radius:        6px;
+  --radius-sm:     4px;
+  --radius-pill:   999px;
+
+  --font-display:  'Bangers', cursive;
+  --font-body:     'Comic Neue', cursive;
+
+  --t-fast:        0.12s ease;
+  --t-spring:      0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MODO OSCURO — "sesión de noche"
+   No es el claro invertido: cambia el papel (azul tinta), cambia la
+   naturaleza de la sombra (de bloque negro a bloque ámbar), y aparece
+   una luz de tele que no existe en el modo claro.
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:            #0B0A14;   /* azul tinta, no negro */
+  --bg-card:       #16142A;   /* viñeta iluminada */
+  --bg-muted:      #221F3D;
+  --bg-input:      #100E20;
+
+  --text:          #F4EBD2;   /* papel cálido sobre azul frío */
+  --text-muted:    #A79BC4;
+  --text-faint:    #6E6490;
+
+  --rojo:          #FF4A2E;
+  --amarillo:      #FFC93C;
+  --azul:          #5B8CFF;
+
+  --accent:        #FFC93C;
+  --accent-fg:     #14121F;
+  --accent2:       #5B8CFF;
+  --accent2-fg:    #0B0A14;
+
+  --header-bg:     #12101F;
+  --header-text:   #FFC93C;
+  --header-border: #FFC93C;
+  --header-glow:   0 3px 28px rgba(255,201,60,0.28);
+
+  --border:        #FFC93C;   /* la tinta ahora es luz */
+  --border-focus:  #5B8CFF;
+
+  /* La sombra deja de ser negra: es el reflejo ámbar de la pantalla */
+  --sh-card:       4px 4px 0 rgba(255,201,60,0.85);
+  --sh-card-hover: 7px 7px 0 #FFC93C;
+  --sh-btn:        3px 3px 0 rgba(255,201,60,0.8);
+  --sh-btn-hover:  5px 5px 0 #FFC93C;
+  --sh-sm:         2px 2px 0 rgba(255,201,60,0.7);
+  --sh-modal:     10px 10px 0 rgba(255,201,60,0.9);
+
+  --overlay:       rgba(4,3,12,0.90);
+
+  /* Los puntos Ben-Day dejan de ser tinta y pasan a ser luz tenue */
+  --dots:          rgba(255,201,60,0.07);
+  --dots-gap:      12px;
+  --dots-r:        1px;
+
+  /* Luz de televisión cayendo desde arriba */
+  --glow-veil:     radial-gradient(
+                     ellipse 900px 420px at 50% -80px,
+                     rgba(255,201,60,0.10) 0%,
+                     rgba(91,140,255,0.05) 42%,
+                     transparent 74%
+                   );
+  --img-filter:    saturate(1.08) brightness(0.9) contrast(1.05);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════ */
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg);
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  background-image: radial-gradient(circle, var(--dots) var(--dots-r), transparent var(--dots-r));
+  background-size: var(--dots-gap) var(--dots-gap);
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+/* Velo de luz de tele — invisible en claro, protagonista en oscuro */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: var(--glow-veil);
+}
+/* El contenido va por encima del velo */
+body > * { position: relative; z-index: 1; }
+
+/* Viñeteado en los bordes, solo de noche */
+[data-theme="dark"] body::after {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.55) 100%);
+}
+
+/* ── SCROLLBAR ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 9px; }
+::-webkit-scrollbar-track { background: var(--bg-muted); }
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  border-radius: 2px;
+}
+
+:focus-visible { outline: 3px solid var(--border-focus); outline-offset: 2px; }
+
+.font-display { font-family: var(--font-display); letter-spacing: 0.05em; line-height: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANIMACIONES
+   ═══════════════════════════════════════════════════════════════════════ */
+@keyframes fadeUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+@keyframes scaleIn  { from{opacity:0;transform:scale(.88) rotate(-1deg)} to{opacity:1;transform:scale(1) rotate(0)} }
+@keyframes slideDown{ from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes shimmer  { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
+@keyframes starPop  { 0%{transform:rotate(0)} 35%{transform:rotate(-14deg)} 70%{transform:rotate(9deg)} 100%{transform:rotate(0)} }
+@keyframes badgeSpin{ 0%{transform:scale(0) rotate(-30deg)} 70%{transform:scale(1.2) rotate(5deg)} 100%{transform:scale(1) rotate(0)} }
+@keyframes wiggle   { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-3deg)} 75%{transform:rotate(3deg)} }
+
+.animate-fadeUp  { animation: fadeUp  .38s cubic-bezier(.22,1,.36,1) both; }
+.animate-fadeIn  { animation: fadeIn  .25s ease both; }
+.animate-scaleIn { animation: scaleIn .3s  cubic-bezier(.34,1.56,.64,1) both; }
+.animate-slide   { animation: slideDown .28s ease both; }
+.page-enter      { animation: fadeUp .35s cubic-bezier(.22,1,.36,1) both; }
+
+.delay-1{animation-delay:.04s} .delay-2{animation-delay:.08s}
+.delay-3{animation-delay:.13s} .delay-4{animation-delay:.18s}
+.delay-5{animation-delay:.23s}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SKELETON
+   ═══════════════════════════════════════════════════════════════════════ */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-muted) 25%, var(--bg-card) 50%, var(--bg-muted) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HEADER — portada en claro, rótulo de neón en oscuro
+   ═══════════════════════════════════════════════════════════════════════ */
+.site-header {
+  background-color: var(--header-bg);
+  position: sticky; top: 0; z-index: 200;
+  border-bottom: 4px solid var(--header-border);
+  background-image: radial-gradient(circle, rgba(0,0,0,0.16) 1.5px, transparent 1.5px);
+  background-size: 8px 8px;
+  box-shadow: var(--header-glow);
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+/* De noche los puntos del header se apagan y el logo se enciende */
+[data-theme="dark"] .site-header {
+  background-image: radial-gradient(circle, rgba(255,201,60,0.055) 1px, transparent 1px);
+  background-size: 10px 10px;
+}
+[data-theme="dark"] .site-header .font-display {
+  text-shadow: 0 0 16px rgba(255,201,60,0.55), 0 0 32px rgba(255,201,60,0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NAV
+   ═══════════════════════════════════════════════════════════════════════ */
+.nav-pill {
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 15px; letter-spacing: .06em;
+  cursor: pointer;
+  border: 2px solid color-mix(in srgb, var(--header-text) 40%, transparent);
+  background: transparent;
+  color: var(--header-text);
+  transition: all var(--t-fast);
+}
+.nav-pill:hover {
+  border-color: var(--header-text);
+  background: color-mix(in srgb, var(--header-text) 14%, transparent);
+}
+.nav-pill.active {
+  background: var(--header-text);
+  color: var(--header-bg);
+  border-color: var(--header-text);
+  box-shadow: 2px 2px 0 var(--header-border);
+}
+[data-theme="dark"] .nav-pill.active {
+  box-shadow: 0 0 18px rgba(255,201,60,0.5);
+  color: #12101F;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TOGGLE
+   ═══════════════════════════════════════════════════════════════════════ */
+.theme-toggle {
+  width: 48px; height: 26px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--header-text);
+  cursor: pointer; position: relative; padding: 0;
+  background: rgba(0,0,0,.32);
+  transition: background var(--t-fast), box-shadow var(--t-fast);
+}
+.theme-toggle .knob {
+  position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 3px;
+  background: var(--header-text);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.theme-toggle.dark  { box-shadow: 0 0 14px rgba(255,201,60,.45); }
+.theme-toggle.dark  .knob { transform: translateX(22px); }
+.theme-toggle.light .knob { transform: translateX(0); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TARJETAS — viñeta impresa / panel iluminado
+   ═══════════════════════════════════════════════════════════════════════ */
+.card {
+  background-color: var(--bg-card);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sh-card);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--t-spring),
+    box-shadow var(--t-spring),
+    background-color var(--t-fast),
+    border-color var(--t-fast);
+}
+.card:hover { transform: translate(-3px,-5px); box-shadow: var(--sh-card-hover); }
+.card.watched { border-color: var(--rojo); box-shadow: 4px 4px 0 var(--rojo); }
+.card.watched:hover { box-shadow: 7px 7px 0 var(--rojo); }
+[data-theme="dark"] .card.watched { box-shadow: 4px 4px 0 var(--rojo), 0 0 22px rgba(255,74,46,.3); }
+
+/* Los pósters se atenúan de noche para no deslumbrar sobre el azul */
+.card img { transition: filter .2s ease, transform .4s ease; }
+[data-theme="dark"] .card img { filter: var(--img-filter); }
+[data-theme="dark"] .card:hover img { filter: saturate(1.15) brightness(1.05); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BOTONES
+   ═══════════════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 14px; letter-spacing: .06em; line-height: 1.2;
+  cursor: pointer; user-select: none;
+  border: 2px solid var(--border);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), background-color var(--t-fast), color var(--t-fast);
+}
+.btn:active { transform: translate(3px,3px) !important; box-shadow: none !important; }
+
+.btn-primary   { background: var(--accent); color: var(--accent-fg); box-shadow: var(--sh-btn); }
+.btn-primary:hover { transform: translate(-2px,-2px); box-shadow: var(--sh-btn-hover); }
+
+.btn-secondary { background: transparent; color: var(--accent); border-color: var(--accent); box-shadow: var(--sh-btn); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); transform: translate(-2px,-2px); box-shadow: var(--sh-btn-hover); }
+
+.btn-ghost     { background: transparent; color: var(--text-muted); border-color: var(--border); box-shadow: var(--sh-sm); }
+.btn-ghost:hover { background: var(--bg-muted); color: var(--text); transform: translate(-1px,-1px); }
+
+.btn-warning   { background: var(--azul); color: var(--accent2-fg); box-shadow: var(--sh-btn); }
+.btn-warning:hover { transform: translate(-2px,-2px); box-shadow: var(--sh-btn-hover); }
+
+[data-theme="dark"] .btn-primary:hover { box-shadow: var(--sh-btn-hover), 0 0 20px rgba(255,201,60,.35); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   INPUTS
+   ═══════════════════════════════════════════════════════════════════════ */
+.input, .textarea {
+  width: 100%;
+  border: var(--border-w) solid var(--border);
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 700;
+  box-shadow: var(--sh-btn);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background-color var(--t-fast);
+}
+.input    { padding: 10px 16px; border-radius: var(--radius-sm); font-size: 15px; }
+.textarea { padding: 10px 13px; border-radius: var(--radius-sm); font-size: 14px; resize: vertical; }
+.input:focus, .textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 4px 4px 0 var(--border-focus);
+}
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CHIPS
+   ═══════════════════════════════════════════════════════════════════════ */
+.chip, .genre-chip {
+  display: inline-flex; align-items: center;
+  padding: 2px 10px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 12px; letter-spacing: .06em;
+  border: 2px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  box-shadow: 1px 1px 0 var(--border);
+  transition: transform var(--t-fast), background-color var(--t-fast), color var(--t-fast);
+}
+.chip-accent { background: var(--accent); color: var(--accent-fg); box-shadow: var(--sh-sm); }
+.genre-chip:hover { transform: translateY(-2px) rotate(-1deg); background: var(--amarillo); color: #0D0D0D; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ESTRELLAS
+   ═══════════════════════════════════════════════════════════════════════ */
+.star-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 0; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  /* Tamaño fijo: nunca cambia al pasar por encima, así no baila la fila */
+  flex: 0 0 auto;
+}
+.star-btn span {
+  line-height: 1;
+  transition: filter .13s ease, opacity .13s ease;
+}
+/* Estrella puntuada: a todo color */
+.star-on  { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+/* Estrella vacía: mismo glifo desaturado. Se ve en ambos temas
+   porque el brillo se ajusta al fondo de cada uno. */
+.star-off { filter: grayscale(1) brightness(.62) contrast(.9); opacity: .55; }
+[data-theme="dark"] .star-off { filter: grayscale(1) brightness(2.1) contrast(.75); opacity: .45; }
+[data-theme="dark"] .star-on  { filter: drop-shadow(0 0 5px rgba(255,201,60,.55)); }
+
+.star-btn:hover .star-off { opacity: .85; }
+.star-btn.active { animation: starPop .35s cubic-bezier(.34,1.56,.64,1); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AVATAR
+   ═══════════════════════════════════════════════════════════════════════ */
+.avatar {
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: #FFD600;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-spring);
+}
+.avatar:hover { transform: scale(1.12) rotate(-4deg); animation: wiggle .4s ease; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OVERLAY / MODAL
+   ═══════════════════════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--overlay);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem; overflow-y: auto;
+  animation: fadeIn .18s ease;
+}
+.modal {
+  background-color: var(--bg-card);
+  border: 4px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%; max-width: 560px;
+  max-height: 92vh; overflow-y: auto;
+  box-shadow: var(--sh-modal);
+  animation: scaleIn .28s cubic-bezier(.34,1.56,.64,1);
+  background-image: radial-gradient(circle, var(--dots) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FEED / RESEÑAS / STATS
+   ═══════════════════════════════════════════════════════════════════════ */
+.feed-item, .review-card, .stat-card, .mini-stat {
+  background-color: var(--bg-card);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  transition:
+    transform var(--t-spring),
+    box-shadow var(--t-spring),
+    background-color var(--t-fast),
+    border-color var(--t-fast);
+}
+.feed-item {
+  padding: .85rem 1rem;
+  display: flex; align-items: flex-start; gap: 12px;
+  box-shadow: var(--sh-btn);
+}
+.feed-item:hover { transform: translate(-3px,-3px); box-shadow: var(--sh-card-hover); border-color: var(--accent); }
+
+.review-card { padding: 1rem; box-shadow: var(--sh-btn); position: relative; }
+.review-card::before {
+  content: ''; position: absolute; top: -10px; left: 20px;
+  border: 5px solid transparent; border-bottom-color: var(--border);
+}
+.review-card::after {
+  content: ''; position: absolute; top: -6px; left: 22px;
+  border: 4px solid transparent; border-bottom-color: var(--bg-card); z-index: 1;
+}
+.review-card:hover { border-color: var(--accent); box-shadow: 4px 4px 0 var(--accent); }
+
+.stat-card { padding: 1.1rem .8rem; text-align: center; box-shadow: var(--sh-card); }
+.stat-card:hover { transform: translate(-3px,-5px); box-shadow: var(--sh-card-hover); border-color: var(--accent); }
+
+.mini-stat {
+  padding: 6px 13px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: var(--sh-sm);
+}
+.mini-stat:hover { border-color: var(--accent); box-shadow: var(--sh-btn); transform: translate(-1px,-1px); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PROGRESO
+   ═══════════════════════════════════════════════════════════════════════ */
+.progress-track {
+  height: 12px; border-radius: 3px;
+  background: var(--bg-muted);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--sh-sm);
+}
+.progress-fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg,
+    var(--rojo) 0 12px, var(--amarillo) 12px 14px);
+  transition: width .7s cubic-bezier(.22,1,.36,1);
+}
+[data-theme="dark"] .progress-fill { box-shadow: 0 0 12px rgba(255,201,60,.45); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TÍTULO PORTADA
+   ═══════════════════════════════════════════════════════════════════════ */
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 6.5vw, 58px);
+  line-height: 1; letter-spacing: .04em;
+  color: var(--accent);
+  text-shadow:
+     3px 0 0 var(--border), -3px 0 0 var(--border),
+     0 3px 0 var(--border),  0 -3px 0 var(--border),
+     4px 4px 0 var(--amarillo);
+}
+/* De noche el título es un rótulo de neón, no tinta con relieve */
+[data-theme="dark"] .hero-title {
+  color: #FFE9A8;
+  text-shadow:
+     0 0 8px  rgba(255,201,60,.9),
+     0 0 22px rgba(255,201,60,.55),
+     0 0 46px rgba(255,140,40,.35),
+     4px 4px 0 rgba(255,74,46,.55);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BADGE DE AÑO
+   ═══════════════════════════════════════════════════════════════════════ */
+.poster-badge {
+  position: absolute; bottom: 8px; left: 8px;
+  background: var(--amarillo); color: #0D0D0D;
+  border: 2px solid #0D0D0D; border-radius: 3px;
+  padding: 1px 7px;
+  font-family: var(--font-display); font-size: 11px; letter-spacing: .05em;
+  box-shadow: 2px 2px 0 #0D0D0D;
+  animation: badgeSpin .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+[data-theme="dark"] .poster-badge { box-shadow: 2px 2px 0 #0D0D0D, 0 0 14px rgba(255,201,60,.5); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BANNER PWA
+   ═══════════════════════════════════════════════════════════════════════ */
+.install-banner {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--bg-card);
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 6px 6px 0 var(--border);
+  z-index: 300;
+  width: calc(100% - 40px); max-width: 420px;
+  animation: slideDown .35s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   GRID / UTILIDADES
+   ═══════════════════════════════════════════════════════════════════════ */
+.series-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px,1fr)); gap: 22px; }
+
+.tebeo-divider {
+  border: none; height: 3px; margin: 1.5rem 0;
+  background: repeating-linear-gradient(90deg, var(--border) 0 8px, transparent 8px 14px);
+}
+
+.truncate    { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.text-accent { color: var(--accent); }
+.text-muted  { color: var(--text-muted); }
+.text-faint  { color: var(--text-faint); }
+.bg-card     { background-color: var(--bg-card); }
+.rounded     { border-radius: var(--radius); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MÓVIL
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .series-grid { grid-template-columns: repeat(2,1fr); gap: 12px; }
+  .hide-mobile { display: none !important; }
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    max-width: 100%; margin: 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-bottom: none; align-self: flex-end;
+    max-height: 95vh; box-shadow: none;
+  }
+  .hero-title { font-size: 30px; }
+  .nav-pill { padding: 4px 9px; font-size: 12px; }
+}
+@media (max-width: 380px) { .series-grid { gap: 8px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LOGO CLICABLE
+   ═══════════════════════════════════════════════════════════════════════ */
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  background: none; border: none; padding: 4px 6px;
+  cursor: pointer; flex-shrink: 0;
+  color: var(--header-text);
+  border-radius: var(--radius-sm);
+  transition: transform var(--t-fast), background-color var(--t-fast);
+}
+.brand:hover {
+  transform: scale(1.04);
+  background: color-mix(in srgb, var(--header-text) 12%, transparent);
+}
+.brand:active { transform: scale(0.98); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PÓSTER DE TARJETA — bloque 2:3 encuadrado, siempre por encima del texto
+   ═══════════════════════════════════════════════════════════════════════ */
+.card-poster {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;          /* proporción real de póster */
+  overflow: hidden;
+  /* Línea de viñeta que separa la imagen de los datos */
+  border-bottom: var(--border-w) solid var(--border);
+  transition: border-color var(--t-fast);
+}
+.card-poster img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center top;  /* prioriza la parte de arriba del póster */
+  transition: transform .4s ease, filter .2s ease;
+}
+.card:hover .card-poster img { transform: scale(1.05); }
+
+.card-poster-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 12px; text-align: center;
+}
+.card-poster-fallback span {
+  font-size: 18px; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  line-height: 1.15;
+}
+
+/* Badges de estado sobre el póster */
+.status-badge {
+  position: absolute; top: 8px; right: 8px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900;
+  box-shadow: 2px 2px 0 var(--border);
+  z-index: 2;
+}
+.status-vista     { background: var(--accent);  color: var(--accent-fg); }
+.status-pendiente { background: var(--accent2); color: var(--accent2-fg); }
+
+/* Cuerpo de la tarjeta — siempre debajo del póster, nunca encima */
+.card-body {
+  /* El padding inferior reserva el hueco del doblez */
+  padding: 10px 12px 26px;
+  position: relative;
+  z-index: 2;
+  background: var(--bg-card);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DOBLEZ DE PÁGINA DE TEBEO
+   Va por encima de todo (z-index alto) pero sin capturar clics, y el
+   .card-body le reserva 26px de hueco para que no pise ningún botón.
+   ═══════════════════════════════════════════════════════════════════════ */
+.card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 26px; height: 26px;
+  pointer-events: none;
+  z-index: 4;
+  border-bottom-right-radius: var(--radius);
+  /* Tres franjas: solapa doblada → línea de tinta → transparente */
+  background: linear-gradient(315deg,
+    var(--bg-muted) 0 45%,
+    var(--border)  45% 53%,
+    transparent    53% 100%
+  );
+}
+/* De noche la solapa capta la luz de la pantalla */
+[data-theme="dark"] .card::after {
+  background: linear-gradient(315deg,
+    #211E3A        0 45%,
+    var(--border) 45% 53%,
+    transparent   53% 100%
+  );
+}
+.card-title {
+  font-weight: 800; font-size: 13px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
