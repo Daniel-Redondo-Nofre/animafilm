@@ -84,6 +84,7 @@ export default function Auth({ onClose }) {
         setDone(true);
       }
     } catch (e) {
+      console.error("[Auth] error real:", e);   // ← temporal, para diagnosticar
       setError(friendlyError(e?.message));
     } finally {
       setLoad(false);
