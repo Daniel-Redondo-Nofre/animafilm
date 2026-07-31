@@ -23,26 +23,12 @@
     <meta property="og:description" content="Las series animadas de tu infancia española" />
     <meta property="og:type" content="website" />
 
-    <!-- Sin FOUC en dark mode -->
-    <script>
-      (function () {
-        var theme = localStorage.getItem("animafilm_theme")
-          || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        document.documentElement.setAttribute("data-theme", theme);
-        document.documentElement.style.backgroundColor = theme === "dark" ? "#0B0A14" : "#F3E9C8";
-      })();
-    </script>
+    <!-- Tema aplicado antes del primer pintado (fichero externo: CSP estricta) -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <script>
-      // Registrar Service Worker
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js").catch(() => {});
-        });
-      }
-    </script>
+    <script src="/sw-register.js" defer></script>
   </body>
 </html>

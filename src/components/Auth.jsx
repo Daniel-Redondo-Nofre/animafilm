@@ -1,120 +1,185 @@
-// src/components/Auth.jsx
+// src/components/Auth.jsx — estilo tebeo + validación endurecida
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const S = {
-  overlay: {
-    position: "fixed", inset: 0, background: "rgba(20,5,0,0.80)",
-    zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center",
-    padding: "1rem", backdropFilter: "blur(6px)",
-  },
-  card: {
-    background: "#FFF8F0", borderRadius: 22, width: "100%",
-    maxWidth: 420, padding: "2.5rem 2rem", boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-  },
-  logo: { fontFamily: "'Fredoka One', cursive", fontSize: 32, color: "#7A0000", textAlign: "center", marginBottom: 6 },
-  sub:  { textAlign: "center", color: "#7A4F3A", fontSize: 14, marginBottom: "2rem" },
-  label: { display: "block", fontWeight: 800, fontSize: 12, color: "#7A0000", marginBottom: 5, letterSpacing: 1, textTransform: "uppercase" },
-  input: {
-    width: "100%", padding: "11px 14px", borderRadius: 10,
-    border: "2px solid #DDD0C4", fontSize: 15, fontFamily: "'Nunito', sans-serif",
-    background: "#fff", color: "#2C1810", marginBottom: "1rem",
-  },
-  btn: (primary) => ({
-    width: "100%", padding: "13px 0", borderRadius: 12,
-    fontWeight: 900, fontSize: 16, cursor: "pointer", fontFamily: "inherit",
-    background: primary ? "#7A0000" : "transparent",
-    color: primary ? "#FFD700" : "#7A0000",
-    border: "2px solid #7A0000",
-    transition: "all 0.15s",
-    marginTop: primary ? "0.5rem" : "0.25rem",
-  }),
-  error: { background: "#FFE8E8", border: "1.5px solid #C00", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#900", marginBottom: "1rem" },
-  toggle: { textAlign: "center", marginTop: "1.2rem", fontSize: 14, color: "#7A4F3A" },
-};
+const MIN_PASS = 8;
+const USER_RE  = /^[a-zA-Z0-9_.-]{3,20}$/;
+const MAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Traduce errores de Supabase a mensajes útiles SIN revelar si una cuenta
+// existe. "Invalid login credentials" es deliberadamente ambiguo: si
+// dijéramos "ese email no está registrado", cualquiera podría sondear
+// direcciones para averiguar quién tiene cuenta (enumeración de usuarios).
+function friendlyError(msg = "") {
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login credentials")) return "Email o contraseña incorrectos.";
+  if (m.includes("email not confirmed"))       return "Confirma tu email antes de entrar. Revisa tu bandeja.";
+  if (m.includes("user already registered"))   return "No hemos podido crear la cuenta. Prueba a iniciar sesión.";
+  if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos. Espera unos minutos.";
+  if (m.includes("password"))                  return `La contraseña debe tener al menos ${MIN_PASS} caracteres.`;
+  if (m.includes("network") || m.includes("fetch")) return "Problema de conexión. Inténtalo de nuevo.";
+  return "Algo ha fallado. Inténtalo de nuevo en un momento.";
+}
+
+// Medidor simple: longitud + variedad de caracteres
+function passScore(p) {
+  if (!p) return 0;
+  let s = 0;
+  if (p.length >= MIN_PASS) s++;
+  if (p.length >= 12) s++;
+  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+  if (/\d/.test(p)) s++;
+  if (/[^\w\s]/.test(p)) s++;
+  return Math.min(s, 4);
+}
+const SCORE_LABEL = ["Muy débil", "Débil", "Aceptable", "Buena", "Fuerte"];
+const SCORE_COLOR = ["#E8200A", "#E8200A", "#C86400", "#0044BB", "#008A3C"];
 
 export default function Auth({ onClose }) {
-  const [mode, setMode]       = useState("login"); // login | register
-  const [email, setEmail]     = useState("");
-  const [password, setPass]   = useState("");
-  const [username, setUser]   = useState("");
-  const [error, setError]     = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [done, setDone]       = useState(false);
+  const [mode, setMode]     = useState("login");
+  const [email, setEmail]   = useState("");
+  const [password, setPass] = useState("");
+  const [username, setUser] = useState("");
+  const [error, setError]   = useState(null);
+  const [loading, setLoad]  = useState(false);
+  const [done, setDone]     = useState(false);
+
+  const score = passScore(password);
+
+  function validate() {
+    if (!MAIL_RE.test(email.trim())) return "Introduce un email válido.";
+    if (mode === "register") {
+      if (!USER_RE.test(username))
+        return "El usuario debe tener entre 3 y 20 caracteres: letras, números, guion, punto o guion bajo.";
+      if (password.length < MIN_PASS)
+        return `La contraseña necesita al menos ${MIN_PASS} caracteres.`;
+      if (score < 2)
+        return "Contraseña demasiado predecible. Combina mayúsculas, números o símbolos.";
+      if (password.toLowerCase().includes(username.toLowerCase()))
+        return "La contraseña no debería contener tu nombre de usuario.";
+    }
+    return null;
+  }
 
   async function handleSubmit() {
-    setError(null);
-    setLoading(true);
+    const problem = validate();
+    if (problem) { setError(problem); return; }
+
+    setError(null); setLoad(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
         if (error) throw error;
         onClose();
       } else {
-        if (username.length < 3) throw new Error("El nombre de usuario debe tener al menos 3 caracteres.");
         const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { data: { username } },
+          email: email.trim().toLowerCase(),
+          password,
+          options: { data: { username: username.trim().toLowerCase() } },
         });
         if (error) throw error;
         setDone(true);
       }
     } catch (e) {
-      setError(e.message);
+      setError(friendlyError(e?.message));
     } finally {
-      setLoading(false);
+      setLoad(false);
+      setPass("");   // no dejamos la contraseña viva en memoria del componente
     }
   }
 
+  const onKey = (e) => { if (e.key === "Enter" && !loading) handleSubmit(); };
+
+  const label   = { display:"block", fontFamily:"var(--font-display)", fontSize:14, color:"var(--accent)", marginBottom:5, letterSpacing:".06em" };
+  const linkBtn = { background:"none", border:"none", cursor:"pointer", color:"var(--accent)", fontFamily:"var(--font-display)", fontSize:15, letterSpacing:".04em", padding:0 };
+
   if (done) return (
-    <div style={S.overlay} onClick={onClose}>
-      <div style={{ ...S.card, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ fontSize: 64, marginBottom: 12 }}>📬</div>
-        <p style={{ ...S.logo, marginBottom: 10 }}>¡Revisa tu email!</p>
-        <p style={{ color: "#7A4F3A", fontSize: 15, lineHeight: 1.7 }}>
-          Te hemos enviado un enlace de confirmación a <strong>{email}</strong>.<br />
-          Haz clic en él para activar tu cuenta.
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" style={{ maxWidth:400, padding:"2.5rem 2rem", textAlign:"center" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ fontSize:64, marginBottom:12 }}>🎉</div>
+        <p className="font-display" style={{ fontSize:30, color:"var(--accent)", marginBottom:10 }}>¡Cuenta creada!</p>
+        <p style={{ color:"var(--text-muted)", fontSize:15, lineHeight:1.7, fontWeight:700 }}>
+          Si tu proyecto pide confirmación, revisa el correo de <strong>{email}</strong>.
+          Si no, ya puedes empezar a puntuar.
         </p>
-        <button style={{ ...S.btn(true), marginTop: "1.5rem" }} onClick={onClose}>Entendido</button>
+        <button className="btn btn-primary" style={{ marginTop:"1.5rem", width:"100%", padding:"11px 0", fontSize:16 }} onClick={onClose}>
+          Entendido
+        </button>
       </div>
     </div>
   );
 
   return (
-    <div style={S.overlay} onClick={onClose}>
-      <div style={S.card} onClick={(e) => e.stopPropagation()}>
-        <div style={S.logo}>📺 AnimaFilm</div>
-        <p style={S.sub}>{mode === "login" ? "Inicia sesión para guardar tu historial" : "Crea tu cuenta gratis"}</p>
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" style={{ maxWidth:400, padding:"2.2rem 2rem" }} onClick={e=>e.stopPropagation()}>
+        <p className="font-display" style={{ fontSize:34, color:"var(--accent)", textAlign:"center", marginBottom:4 }}>📺 AnimaFilm</p>
+        <p style={{ textAlign:"center", color:"var(--text-muted)", fontSize:14, marginBottom:"1.8rem", fontWeight:700 }}>
+          {mode==="login" ? "Inicia sesión para guardar tu historial" : "Crea tu cuenta gratis"}
+        </p>
 
-        {error && <div style={S.error}>⚠️ {error}</div>}
-
-        {mode === "register" && (
-          <label style={{ display: "block" }}>
-            <span style={S.label}>Nombre de usuario</span>
-            <input style={S.input} value={username} onChange={(e) => setUser(e.target.value)} placeholder="Ej: infanteria80s" />
-          </label>
+        {error && (
+          <div role="alert" style={{ background:"var(--rojo)", color:"#fff", border:"3px solid var(--border)", borderRadius:"var(--radius-sm)", padding:"10px 14px", fontSize:14, marginBottom:"1rem", fontWeight:700, boxShadow:"3px 3px 0 var(--border)" }}>
+            ¡ZAS! {error}
+          </div>
         )}
 
-        <label style={{ display: "block" }}>
-          <span style={S.label}>Email</span>
-          <input style={S.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" />
-        </label>
+        {mode==="register" && (
+          <div style={{ marginBottom:"1rem" }}>
+            <span style={label}>Nombre de usuario</span>
+            <input className="input" value={username} maxLength={20} autoComplete="username"
+                   onChange={e=>setUser(e.target.value)} onKeyDown={onKey}
+                   placeholder="Ej: capitantrueno80" />
+          </div>
+        )}
 
-        <label style={{ display: "block" }}>
-          <span style={S.label}>Contraseña</span>
-          <input style={S.input} type="password" value={password} onChange={(e) => setPass(e.target.value)} placeholder="Mínimo 6 caracteres" />
-        </label>
+        <div style={{ marginBottom:"1rem" }}>
+          <span style={label}>Email</span>
+          <input className="input" type="email" value={email} maxLength={120}
+                 autoComplete={mode==="login" ? "username" : "email"}
+                 onChange={e=>setEmail(e.target.value)} onKeyDown={onKey}
+                 placeholder="tu@email.com" />
+        </div>
 
-        <button style={S.btn(true)} onClick={handleSubmit} disabled={loading}>
-          {loading ? "Cargando…" : mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
+        <div style={{ marginBottom: mode==="register" ? ".6rem" : "1.4rem" }}>
+          <span style={label}>Contraseña</span>
+          <input className="input" type="password" value={password} maxLength={72}
+                 autoComplete={mode==="login" ? "current-password" : "new-password"}
+                 onChange={e=>setPass(e.target.value)} onKeyDown={onKey}
+                 placeholder={mode==="login" ? "Tu contraseña" : `Mínimo ${MIN_PASS} caracteres`} />
+        </div>
+
+        {/* Medidor de fuerza, solo al registrarse */}
+        {mode==="register" && password.length > 0 && (
+          <div style={{ marginBottom:"1.4rem" }}>
+            <div style={{ display:"flex", gap:4, marginBottom:5 }}>
+              {[0,1,2,3].map(i => (
+                <div key={i} style={{
+                  flex:1, height:6, borderRadius:3,
+                  border:"1.5px solid var(--border)",
+                  background: i < score ? SCORE_COLOR[score] : "var(--bg-muted)",
+                  transition:"background .2s ease",
+                }} />
+              ))}
+            </div>
+            <span style={{ fontSize:12, fontWeight:700, color:"var(--text-muted)" }}>
+              Seguridad: <strong style={{ color: SCORE_COLOR[score] }}>{SCORE_LABEL[score]}</strong>
+            </span>
+          </div>
+        )}
+
+        <button className="btn btn-primary" style={{ width:"100%", padding:"12px 0", fontSize:17, opacity: loading ? .6 : 1 }}
+                onClick={handleSubmit} disabled={loading}>
+          {loading ? "Cargando…" : mode==="login" ? "¡Adelante!" : "Crear cuenta"}
         </button>
 
-        <div style={S.toggle}>
-          {mode === "login" ? (
-            <span>¿Nuevo aquí? <button style={{ background: "none", border: "none", cursor: "pointer", color: "#7A0000", fontWeight: 800, fontSize: 14, fontFamily: "inherit" }} onClick={() => { setMode("register"); setError(null); }}>Regístrate</button></span>
-          ) : (
-            <span>¿Ya tienes cuenta? <button style={{ background: "none", border: "none", cursor: "pointer", color: "#7A0000", fontWeight: 800, fontSize: 14, fontFamily: "inherit" }} onClick={() => { setMode("login"); setError(null); }}>Inicia sesión</button></span>
-          )}
+        <div style={{ textAlign:"center", marginTop:"1.2rem", fontSize:14, color:"var(--text-muted)", fontWeight:700 }}>
+          {mode==="login"
+            ? <>¿Nuevo aquí? <button style={linkBtn} onClick={()=>{setMode("register");setError(null);setPass("");}}>Regístrate</button></>
+            : <>¿Ya tienes cuenta? <button style={linkBtn} onClick={()=>{setMode("login");setError(null);setPass("");}}>Inicia sesión</button></>
+          }
         </div>
       </div>
     </div>
