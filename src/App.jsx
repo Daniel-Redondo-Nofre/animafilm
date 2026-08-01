@@ -71,14 +71,17 @@ function CardSkeleton() {
   );
 }
 
-function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVista, onTogglePendiente, onRate, animDelay=0 }) {
+function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVista, onTogglePendiente, onRate, animDelay=0, prioritaria=false }) {
   const url = `/serie/${slugify(serie.titulo)}`;
   return (
     <article className={`card animate-fadeUp${vista?" watched":""}`} style={{ animationDelay:`${animDelay}ms` }}>
       <Link to={url} className="card-poster-link" tabIndex={-1} aria-hidden="true">
       <div className="card-poster" style={{ background:serie.color }}>
         {poster
-          ? <img src={posterTam(poster,"w185")} alt="" width="185" height="278" loading="lazy" decoding="async" />
+          ? <img src={posterTam(poster,"w185")} alt="" width="185" height="278"
+                 loading={prioritaria ? "eager" : "lazy"}
+                 fetchPriority={prioritaria ? "high" : "auto"}
+                 decoding={prioritaria ? "sync" : "async"} />
           : <div className="card-poster-fallback">
               <span className="font-display">{serie.titulo}</span>
             </div>
@@ -683,6 +686,7 @@ export default function App() {
                     <SerieCard key={serie.id} serie={serie} poster={serie.poster} stats={stats[serie.id]}
                       vista={!!vistas[serie.id]} pendiente={!!pendientes[serie.id]} rating={ratings[serie.id]||0}
                       animDelay={Math.min(i*30,400)}
+                      prioritaria={i < 6}
                       onToggleVista={()=>toggleVista(serie.id)}
                       onTogglePendiente={()=>togglePendiente(serie.id)}
                       onRate={r=>setRating(serie.id,r)}

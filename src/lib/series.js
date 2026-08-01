@@ -7,6 +7,28 @@ import { supabase } from "./supabase";
 let cache = null;
 let inflight = null;
 
+// El catálogo cambia muy de vez en cuando. Guardarlo en localStorage
+// permite pintar la rejilla en la primera pasada, sin esperar a la red,
+// y refrescar en segundo plano. Solo afecta a visitas repetidas.
+const CLAVE = "animafilm_catalogo_v1";
+const VIGENCIA = 1000 * 60 * 60 * 12;   // 12 horas
+
+function leerCache() {
+  try {
+    const raw = localStorage.getItem(CLAVE);
+    if (!raw) return null;
+    const { ts, datos } = JSON.parse(raw);
+    if (Date.now() - ts > VIGENCIA) return null;
+    return datos;
+  } catch { return null; }
+}
+
+function guardarCache(datos) {
+  try {
+    localStorage.setItem(CLAVE, JSON.stringify({ ts: Date.now(), datos }));
+  } catch { /* modo privado o cuota llena: seguimos sin caché */ }
+}
+
 // La base usa `anio` (sin ñ ni tildes, más seguro en SQL); la interfaz
 // venía usando `año`. Traducimos aquí para no tocar el resto del código.
 function normalize(row) {
@@ -29,6 +51,15 @@ export async function fetchSeries() {
   if (cache) return cache;
   if (inflight) return inflight;
 
+  const guardado = leerCache();
+  if (guardado) {
+    cache = guardado;
+    // Refresco silencioso: si el catálogo cambió, la próxima visita
+    // ya tendrá lo nuevo sin que esta se haya ralentizado.
+    refrescarEnSegundoPlano();
+    return cache;
+  }
+
   inflight = (async () => {
     const { data, error } = await supabase
       .from("series")
@@ -40,6 +71,7 @@ export async function fetchSeries() {
       throw new Error(error.message);
     }
     cache = (data ?? []).map(normalize);
+    guardarCache(cache);
     inflight = null;
     return cache;
   })();
@@ -61,7 +93,17 @@ export async function fetchSeriesStats() {
   return Object.fromEntries(data.map(r => [r.serie_id, r]));
 }
 
-export function clearSeriesCache() { cache = null; }
+async function refrescarEnSegundoPlano() {
+  try {
+    const { data, error } = await supabase.from("series").select("*").order("anio");
+    if (!error && data?.length) guardarCache(data.map(normalize));
+  } catch { /* si falla, seguimos con lo cacheado */ }
+}
+
+export function clearSeriesCache() {
+  cache = null;
+  try { localStorage.removeItem(CLAVE); } catch {}
+}
 
 // Los pósters se guardan en w342. En la rejilla las tarjetas miden ~165px,
 // así que servir w342 gasta el doble de datos de lo necesario. w185 cubre
