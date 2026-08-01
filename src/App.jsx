@@ -1,6 +1,6 @@
 // src/App.jsx — AnimaFilm v3 (diseño mejorado)
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
-import { Routes, Route, NavLink, useNavigate, useMatch, useLocation, Link } from "react-router-dom";
+import { Routes, Route, NavLink, useNavigate, useMatch, useLocation, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { fetchSeries, fetchSeriesStats, poster as posterTam } from "./lib/series";
 import { slugify, findBySlug } from "./lib/slug";
@@ -72,8 +72,10 @@ function CardSkeleton() {
   );
 }
 
-function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVista, onTogglePendiente, onRate, animDelay=0, prioritaria=false }) {
-  const url = `/serie/${slugify(serie.titulo)}`;
+function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVista, onTogglePendiente, onRate, animDelay=0, prioritaria=false, filtros="" }) {
+  // Arrastrar los filtros evita que el catálogo de detrás se "desfiltre"
+  // mientras el modal está abierto.
+  const url = `/serie/${slugify(serie.titulo)}${filtros}`;
   return (
     <article className={`card animate-fadeUp${vista?" watched":""}`} style={{ animationDelay:`${animDelay}ms` }}>
       <Link to={url} className="card-poster-link" tabIndex={-1} aria-hidden="true">
@@ -506,11 +508,53 @@ export default function App() {
   const [series, setSeries]         = useState([]);
   const [stats, setStats]           = useState({});
   const [loadError, setLoadError]   = useState(null);
-  const [decada, setDecada] = useState("Todas");
-  const [busqueda, setBusqueda] = useState("");
-  const [genero, setGenero]     = useState("Todos");
-  const [orden, setOrden]       = useState("año");
-  const [ascendente, setAsc]    = useState(true);
+  // ── FILTROS EN LA URL ────────────────────────────────────────────────
+  // Los filtros viven en la barra de direcciones, no en el estado. Así
+  // un catálogo filtrado es un enlace que se puede compartir o guardar
+  // en marcadores, y el botón atrás deshace el último filtro.
+  const [params, setParams] = useSearchParams();
+
+  const decada     = params.get("decada") || "Todas";
+  const genero     = params.get("genero") || "Todos";
+  const orden      = params.get("orden")  || "año";
+  const ascendente = params.get("dir") !== "desc";
+  const busqueda   = params.get("q") || "";
+
+  // Escribe solo los parámetros que se apartan del valor por defecto:
+  // así la URL limpia es "/" y no "/?decada=Todas&genero=Todos&…"
+  const aplicarFiltro = useCallback((cambios, reemplazar = false) => {
+    setParams(prev => {
+      const p = new URLSearchParams(prev);
+      Object.entries(cambios).forEach(([k, v]) => {
+        const esDefecto =
+          (k === "decada" && v === "Todas") ||
+          (k === "genero" && v === "Todos") ||
+          (k === "orden"  && v === "año")   ||
+          (k === "dir"    && v === "asc")   ||
+          (k === "q"      && !v);
+        if (esDefecto || v == null || v === "") p.delete(k);
+        else p.set(k, v);
+      });
+      return p;
+    }, { replace: reemplazar });
+  }, [setParams]);
+
+  const setDecada = useCallback(v => aplicarFiltro({ decada: v }), [aplicarFiltro]);
+  const setGenero = useCallback(v => aplicarFiltro({ genero: v }), [aplicarFiltro]);
+
+  // El texto de búsqueda se escribe en la URL con retardo y con replace:
+  // si no, cada letra dejaría una entrada en el historial.
+  const [textoBusqueda, setTextoBusqueda] = useState(busqueda);
+  useEffect(() => {
+    if (textoBusqueda === busqueda) return;
+    const t = setTimeout(() => aplicarFiltro({ q: textoBusqueda }, true), 280);
+    return () => clearTimeout(t);
+  }, [textoBusqueda, busqueda, aplicarFiltro]);
+
+  const limpiarFiltros = useCallback(() => {
+    setTextoBusqueda("");
+    setParams(new URLSearchParams(), { replace: true });
+  }, [setParams]);
   const [vistas, setVistas] = useState({});
   const [pendientes, setPendientes] = useState({});
   const [ratings, setRatings] = useState({});
@@ -531,9 +575,7 @@ export default function App() {
   );
 
   const filtrarPorGenero = useCallback((g) => {
-    setGenero(g);
-    setDecada("Todas");
-    navigate("/");
+    navigate(`/?genero=${encodeURIComponent(g)}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [navigate]);
 
@@ -735,13 +777,25 @@ export default function App() {
               <p className="animate-fadeUp delay-1" style={{ color:"var(--text-muted)", fontSize:16, marginTop:8, maxWidth:480, margin:"8px auto 0" }}>Puntúa, reseña y recuerda las series que marcaron toda una generación</p>
             </div>
             <div style={{ display:"flex", gap:12, marginBottom:"1.2rem", flexWrap:"wrap", alignItems:"center" }} className="animate-fadeUp delay-2">
-              <input className="input" type="search" aria-label="Buscar serie por título, cadena o género" placeholder="🔍  Buscar serie…" defaultValue={busqueda} onChange={e=>{ clearTimeout(window._st); window._st=setTimeout(()=>setBusqueda(e.target.value),220); }} style={{ flex:1, minWidth:180 }}/>
+              <input className="input" type="search" aria-label="Buscar serie por título, cadena o género" placeholder="🔍  Buscar serie…" value={textoBusqueda} onChange={e=>setTextoBusqueda(e.target.value)} style={{ flex:1, minWidth:180 }}/>
               <div role="group" aria-label="Filtrar por década" style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                 {DECADAS.map(d=>(
                   <button key={d} className={d===decada?"btn btn-primary":"btn btn-secondary"} aria-pressed={d===decada} style={{ padding:"8px 16px", fontSize:13, borderRadius:24 }} onClick={()=>setDecada(d)}>{d}</button>
                 ))}
               </div>
             </div>
+
+            {/* Aviso de filtros activos */}
+            {(decada!=="Todas" || genero!=="Todos" || busqueda) && (
+              <div className="filtros-activos animate-fadeIn">
+                <span>Filtrando por:</span>
+                {busqueda && <span className="chip">"{busqueda}"</span>}
+                {decada!=="Todas" && <span className="chip">{decada}</span>}
+                {genero!=="Todos" && <span className="chip">{genero}</span>}
+                <button className="btn btn-ghost" style={{ fontSize:11, padding:"3px 10px" }}
+                        onClick={limpiarFiltros}>✕ Limpiar</button>
+              </div>
+            )}
 
             {/* Géneros */}
             {GENEROS.length > 1 && (
@@ -765,10 +819,14 @@ export default function App() {
                   className={`sort-btn${orden===o.id?" active":""}`}
                   aria-pressed={orden===o.id}
                   onClick={()=>{
-                    if (orden===o.id) { setAsc(a=>!a); }
-                    // Al cambiar de criterio, la dirección más útil por
-                    // defecto: nota y vistas de mayor a menor, el resto al revés.
-                    else { setOrden(o.id); setAsc(!(o.id==="nota"||o.id==="vistas")); }
+                    if (orden===o.id) {
+                      aplicarFiltro({ orden:o.id, dir: ascendente ? "desc" : "asc" });
+                    } else {
+                      // Al cambiar de criterio, la dirección más útil por
+                      // defecto: nota y vistas de mayor a menor, el resto al revés.
+                      const desc = o.id==="nota" || o.id==="vistas";
+                      aplicarFiltro({ orden:o.id, dir: desc ? "desc" : "asc" });
+                    }
                   }}
                   title={orden===o.id ? "Pulsa para invertir el orden" : `Ordenar por ${o.label.toLowerCase()}`}
                 >
@@ -806,6 +864,7 @@ export default function App() {
                       vista={!!vistas[serie.id]} pendiente={!!pendientes[serie.id]} rating={ratings[serie.id]||0}
                       animDelay={Math.min(i*30,400)}
                       prioritaria={i < 6}
+                      filtros={location.search}
                       onToggleVista={()=>toggleVista(serie.id)}
                       onTogglePendiente={()=>togglePendiente(serie.id)}
                       onRate={r=>setRating(serie.id,r)}
@@ -830,7 +889,7 @@ export default function App() {
           <Link
             to="/"
             className="brand"
-            onClick={()=>{ setDecada("Todas"); window.scrollTo({ top:0, behavior:"smooth" }); }}
+            onClick={()=>{ limpiarFiltros(); window.scrollTo({ top:0, behavior:"smooth" }); }}
             title="Volver al catálogo"
           >
             <span style={{ fontSize:26 }}>📺</span>

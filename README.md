@@ -1,23 +1,46 @@
-# 📺 AnimaFilm
+<p align="center">
+  <img src="docs/banner.png" alt="AnimaFilm" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://animafilm.vercel.app"><strong>animafilm.vercel.app</strong></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19">
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite 8">
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
+  <img src="https://img.shields.io/badge/Lighthouse-100%20A11y-success" alt="Lighthouse 100">
+</p>
+
+---
 
 Un Letterboxd para las series animadas que marcaron la infancia en España,
 de los años 70 a los 2000. Puntúa, reseña y recuerda Heidi, David el gnomo,
 Bola de Dragón, Shin Chan o Los Lunnis.
 
-🔗 **[animafilm.vercel.app](https://animafilm.vercel.app)**
+## Capturas
+
+<p align="center">
+  <img src="docs/captura-claro.png"  alt="Catálogo en modo claro"  width="49%">
+  <img src="docs/captura-oscuro.png" alt="Catálogo en modo oscuro" width="49%">
+</p>
 
 ---
 
 ## Qué hace
 
-- **Catálogo** de 30 series con búsqueda por título, cadena o género, filtro
-  por década y ordenación por año, nota, popularidad o alfabético.
+- **Catálogo** de 30 series con búsqueda por título, cadena o género, filtros
+  por década y género, y ordenación por año, nota, popularidad o alfabético.
+  Los filtros viven en la URL: un catálogo filtrado se puede compartir.
 - **Valoraciones** de 1 a 5 estrellas, con nota media de la comunidad
   calculada en el servidor.
 - **Listas** de series vistas y pendientes, sincronizadas entre dispositivos.
 - **Reseñas** escritas, editables y borrables.
+- **Compartir series** con menú nativo en móvil y portapapeles en escritorio.
 - **Feed** con la actividad reciente de toda la comunidad.
 - **Perfil** con estadísticas y progreso por década.
+- **Inicio de sesión con Google** o con email y contraseña.
 - **Gestión de cuenta**: editar perfil, exportar tus datos en JSON y borrar
   la cuenta (RGPD).
 - **Modo claro y oscuro**, con estética de tebeo español de los 80.
@@ -95,6 +118,26 @@ En Supabase → **Authentication → URL Configuration**:
 - **Site URL**: la URL de producción
 - **Redirect URLs**: esa misma y `http://localhost:5173`
 
+<details>
+<summary><strong>Inicio de sesión con Google</strong></summary>
+
+<br>
+
+En [Google Cloud Console](https://console.cloud.google.com):
+
+1. Nuevo proyecto → **Pantalla de consentimiento OAuth** (tipo Externo)
+2. **Credenciales → ID de cliente de OAuth → Aplicación web**
+3. Orígenes de JavaScript: tu dominio y `http://localhost:5173`
+4. URI de redirección: `https://TU-PROYECTO.supabase.co/auth/v1/callback`
+
+En Supabase → **Authentication → Providers → Google**: activar y pegar el
+Client ID y el Client Secret.
+
+> La URI de redirección apunta a **Supabase**, no a tu web. El flujo es:
+> tu web → Google → Supabase → tu web. Es donde falla casi todo el mundo.
+
+</details>
+
 ### 6. Arrancar
 
 ```bash
@@ -111,7 +154,7 @@ src/
 ├── main.jsx                  Punto de entrada
 ├── index.css                 Sistema de diseño completo
 ├── components/
-│   ├── Auth.jsx              Registro e inicio de sesión
+│   ├── Auth.jsx              Registro, login y OAuth con Google
 │   ├── GestionCuenta.jsx     Editar perfil, exportar y borrar cuenta
 │   └── Portal.jsx            Modales fuera del árbol del DOM
 └── lib/
@@ -143,6 +186,11 @@ dejan un transform aplicado, así que el velo del modal quedaba recortado al
 instante y, si la petición falla, se deshace y aparece un aviso. Antes se
 aplicaba pasara lo que pasara: la estrella quedaba marcada aunque no se
 hubiera guardado nada.
+
+**Los filtros viven en la URL.**
+Un catálogo filtrado es un enlace compartible, el botón atrás deshace el
+último filtro, y la URL limpia sigue siendo `/` porque solo se escriben los
+parámetros que se apartan del valor por defecto.
 
 **El catálogo está en la base de datos, no en el código.** Así `serie_id`
 puede ser una clave foránea real, se puede calcular la nota media de la
@@ -185,10 +233,10 @@ etiquetas descriptivas y contraste verificado en ambos temas.
 
 ## Pendiente
 
-- Inicio de sesión con Google
-- Listas personalizadas y seguir a otros usuarios
-- Recomendador basado en valoraciones
-- Open Graph por serie (requiere renderizado en servidor)
+- [ ] Perfiles públicos y seguir a otros usuarios
+- [ ] Listas personalizadas
+- [ ] Recomendador basado en valoraciones
+- [ ] Ampliar el catálogo más allá de las 30 series iniciales
 
 ---
 

@@ -1131,3 +1131,18 @@ body > * { position: relative; z-index: 1; }
   .genre-pill { font-size: 11px; padding: 3px 9px; }
   .genre-bar .sort-label { width: 100%; margin-bottom: 2px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AVISO DE FILTROS ACTIVOS
+   ═══════════════════════════════════════════════════════════════════════ */
+.filtros-activos {
+  display: flex; align-items: center; gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: .9rem;
+  padding: 8px 12px;
+  background: var(--bg-muted);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 800;
+  color: var(--text-muted);
+}
