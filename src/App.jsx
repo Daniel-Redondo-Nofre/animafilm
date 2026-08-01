@@ -8,6 +8,7 @@ const EditarPerfil  = lazy(() => import("./components/GestionCuenta.jsx").then(m
 const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 import Portal from "./components/Portal.jsx";
 import { useModal } from "./lib/useModal";
+import { Toasts, toast, mensajeDeError } from "./lib/toast.jsx";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
 // Estos componentes solo aparecen al pulsar algo: no deben pesar
 // en la descarga inicial.
@@ -137,19 +138,42 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
 
   const hasMyReview=reviews.some(r=>r.user_id===user?.id);
 
-  async function saveReview(){
-    if(!myReview.trim()||!user) return;
-    await supabase.from("reviews").upsert({user_id:user.id,serie_id:serie.id,content:myReview.trim()},{onConflict:"user_id,serie_id"});
-    setEditing(false);
+  const [guardando, setGuardando] = useState(false);
+
+  async function recargarReseñas(){
     const {data}=await supabase.from("reviews").select("*,profiles(username,display_name)").eq("serie_id",serie.id).order("created_at",{ascending:false});
     setReviews(data||[]);
   }
 
+  async function saveReview(){
+    const texto = myReview.trim();
+    if(!texto||!user||guardando) return;
+    if(texto.length > 2000){ toast.error("La reseña no puede pasar de 2000 caracteres."); return; }
+
+    setGuardando(true);
+    const {error}=await supabase.from("reviews")
+      .upsert({user_id:user.id,serie_id:serie.id,content:texto},{onConflict:"user_id,serie_id"});
+    setGuardando(false);
+
+    if(error){ toast.error(mensajeDeError(error)); return; }
+
+    setEditing(false);
+    toast.ok("Reseña publicada");
+    recargarReseñas();
+  }
+
   async function deleteReview(){
-    await supabase.from("reviews").delete().eq("user_id",user.id).eq("serie_id",serie.id);
+    if(guardando) return;
+    const copia = myReview;              // por si hay que devolverlo
+    setGuardando(true);
+    const {error}=await supabase.from("reviews").delete().eq("user_id",user.id).eq("serie_id",serie.id);
+    setGuardando(false);
+
+    if(error){ setMyReview(copia); toast.error(mensajeDeError(error)); return; }
+
     setMyReview("");
-    const {data}=await supabase.from("reviews").select("*,profiles(username,display_name)").eq("serie_id",serie.id).order("created_at",{ascending:false});
-    setReviews(data||[]);
+    toast.ok("Reseña eliminada");
+    recargarReseñas();
   }
 
   return (
@@ -217,7 +241,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                 <>
                   <textarea className="textarea" value={myReview} onChange={e=>setMyReview(e.target.value)} placeholder="¿Qué recuerdas? ¿La veías con alguien especial?" rows={3}/>
                   <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                    <button className="btn btn-primary" style={{ flex:1, padding:"8px 0", fontSize:13 }} onClick={saveReview}>Publicar</button>
+                    <button className="btn btn-primary" style={{ flex:1, padding:"8px 0", fontSize:13 }} onClick={saveReview} disabled={guardando}>{guardando?"Publicando…":"Publicar"}</button>
                     {hasMyReview&&<button className="btn btn-ghost" style={{ padding:"8px 14px", fontSize:13 }} onClick={()=>setEditing(false)}>Cancelar</button>}
                   </div>
                 </>
@@ -226,7 +250,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                   <p style={{ fontSize:14, color:"var(--text-muted)", lineHeight:1.7 }}>{myReview}</p>
                   <div style={{ display:"flex", gap:8, marginTop:10 }}>
                     <button className="btn btn-ghost" style={{ fontSize:12, padding:"5px 12px" }} onClick={()=>setEditing(true)}>Editar</button>
-                    <button style={{ fontSize:12, padding:"5px 12px", borderRadius:8, background:"#FFE8E8", color:"#900", border:"1.5px solid #C00", cursor:"pointer", fontFamily:"inherit", fontWeight:700 }} onClick={deleteReview}>Eliminar</button>
+                    <button style={{ fontSize:12, padding:"5px 12px", borderRadius:8, background:"#FFE8E8", color:"#900", border:"1.5px solid #C00", cursor:"pointer", fontFamily:"inherit", fontWeight:700 }} onClick={deleteReview} disabled={guardando}>Eliminar</button>
                   </div>
                 </>
               )}
@@ -466,6 +490,8 @@ export default function App() {
   const [ratings, setRatings] = useState({});
   const [catalogLoaded, setCatalogLoaded] = useState(false);
 
+  const pedirLogin = useCallback(()=>{ setAuthMode("login"); setShowAuth(true); }, []);
+
   const navigate    = useNavigate();
   const location    = useLocation();
   const matchSerie  = useMatch("/serie/:slug");
@@ -537,39 +563,79 @@ export default function App() {
 
   const user=session?{...session.user,profile}:null;
 
+  // ── ESCRITURAS OPTIMISTAS CON REVERSIÓN ──────────────────────────────
+  // El patrón: aplicamos el cambio en pantalla al instante (la interfaz
+  // responde sin esperar a la red), lanzamos la petición, y si falla
+  // devolvemos el estado a como estaba y avisamos.
+  //
+  // Antes se aplicaba el cambio pasara lo que pasara: si Supabase fallaba,
+  // la estrella se quedaba marcada y el usuario creía haber guardado algo
+  // que no existía. Eso es peor que no guardar: es mentir.
+
   const toggleVista=useCallback(async(id)=>{
-    if(!session){ setShowAuth(true); return; }
+    if(!session){ pedirLogin(); return; }
     const uid=session.user.id;
-    if(vistas[id]){
-      await supabase.from("watched").delete().eq("user_id",uid).eq("serie_id",id);
-      setVistas(p=>({...p,[id]:false}));
-    } else {
-      await supabase.from("watched").insert({user_id:uid,serie_id:id});
-      setVistas(p=>({...p,[id]:true}));
-      await supabase.from("watchlist").delete().eq("user_id",uid).eq("serie_id",id);
-      setPendientes(p=>({...p,[id]:false}));
+    const eraVista     = !!vistas[id];
+    const eraPendiente = !!pendientes[id];
+
+    setVistas(p=>({...p,[id]:!eraVista}));
+    if(!eraVista && eraPendiente) setPendientes(p=>({...p,[id]:false}));
+
+    const { error } = eraVista
+      ? await supabase.from("watched").delete().eq("user_id",uid).eq("serie_id",id)
+      : await supabase.from("watched").insert({user_id:uid,serie_id:id});
+
+    if(error){
+      setVistas(p=>({...p,[id]:eraVista}));
+      setPendientes(p=>({...p,[id]:eraPendiente}));
+      toast.error(mensajeDeError(error));
+      return;
     }
-  },[session,vistas]);
+
+    // Marcar como vista saca la serie de pendientes. Si esto falla no
+    // revertimos: lo importante (la marca de vista) ya se guardó.
+    if(!eraVista && eraPendiente){
+      await supabase.from("watchlist").delete().eq("user_id",uid).eq("serie_id",id);
+    }
+  },[session,vistas,pendientes,pedirLogin]);
 
   const togglePendiente=useCallback(async(id)=>{
-    if(!session){ setShowAuth(true); return; }
+    if(!session){ pedirLogin(); return; }
     const uid=session.user.id;
-    if(pendientes[id]){
-      await supabase.from("watchlist").delete().eq("user_id",uid).eq("serie_id",id);
-      setPendientes(p=>({...p,[id]:false}));
-    } else {
-      await supabase.from("watchlist").insert({user_id:uid,serie_id:id});
-      setPendientes(p=>({...p,[id]:true}));
+    const antes = !!pendientes[id];
+
+    setPendientes(p=>({...p,[id]:!antes}));
+
+    const { error } = antes
+      ? await supabase.from("watchlist").delete().eq("user_id",uid).eq("serie_id",id)
+      : await supabase.from("watchlist").insert({user_id:uid,serie_id:id});
+
+    if(error){
+      setPendientes(p=>({...p,[id]:antes}));
+      toast.error(mensajeDeError(error));
     }
-  },[session,pendientes]);
+  },[session,pendientes,pedirLogin]);
 
   const setRating=useCallback(async(id,r)=>{
-    if(!session){ setShowAuth(true); return; }
+    if(!session){ pedirLogin(); return; }
     const uid=session.user.id;
-    if(r===0) await supabase.from("ratings").delete().eq("user_id",uid).eq("serie_id",id);
-    else await supabase.from("ratings").upsert({user_id:uid,serie_id:id,rating:r},{onConflict:"user_id,serie_id"});
+    const antes = ratings[id] ?? 0;
+
     setRatings(prev=>({...prev,[id]:r}));
-  },[session]);
+
+    const { error } = r===0
+      ? await supabase.from("ratings").delete().eq("user_id",uid).eq("serie_id",id)
+      : await supabase.from("ratings").upsert({user_id:uid,serie_id:id,rating:r},{onConflict:"user_id,serie_id"});
+
+    if(error){
+      setRatings(prev=>({...prev,[id]:antes}));
+      toast.error(mensajeDeError(error));
+      return;
+    }
+
+    // La nota de la comunidad ha cambiado: la refrescamos sin bloquear
+    fetchSeriesStats().then(setStats).catch(()=>{});
+  },[session,ratings,pedirLogin]);
 
   const seriesFiltradas=useMemo(()=>{
     const q = busqueda.trim().toLowerCase();
@@ -619,8 +685,6 @@ export default function App() {
     {to:"/comunidad", label:"🌐 Comunidad"},
     {to:"/perfil",    label:`⭐ Mi Perfil${totalVistas>0?` (${totalVistas})`:""}`},
   ];
-
-  const pedirLogin = useCallback(()=>{ setAuthMode("login"); setShowAuth(true); }, []);
 
   const catalogo = (
     <div className="page-enter">
@@ -776,6 +840,8 @@ export default function App() {
           onShowAuth={()=>{ cerrarSerie(); pedirLogin(); }}
         />
       )}
+      <Toasts />
+
       <Suspense fallback={null}>
         {showAuth&&<Auth initialMode={authMode} onClose={()=>{ setShowAuth(false); setAuthMode("login"); }}/>}
       </Suspense>
