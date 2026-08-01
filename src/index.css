@@ -837,3 +837,54 @@ body > * { position: relative; z-index: 1; }
 .load-error strong {
   display: block; font-size: 15px; font-weight: 800; color: var(--text);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BARRA DE ORDENACIÓN
+   ═══════════════════════════════════════════════════════════════════════ */
+.sort-bar {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+}
+.sort-label {
+  font-family: var(--font-display);
+  font-size: 14px; letter-spacing: .05em;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.sort-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 800; font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-fast), box-shadow var(--t-fast),
+              background-color var(--t-fast), color var(--t-fast);
+}
+.sort-btn:hover {
+  transform: translate(-1px,-1px);
+  box-shadow: var(--sh-btn);
+  color: var(--text);
+}
+.sort-btn:active { transform: translate(2px,2px); box-shadow: none; }
+.sort-btn.active {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: var(--sh-btn);
+}
+.sort-btn em {
+  font-style: normal;
+  font-size: 14px;
+  line-height: 1;
+  margin-left: 1px;
+}
+
+@media (max-width: 600px) {
+  .sort-label { width: 100%; margin-bottom: 2px; }
+  .sort-btn { font-size: 11px; padding: 4px 9px; }
+}

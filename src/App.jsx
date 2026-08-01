@@ -9,6 +9,15 @@ import Auth from "./components/Auth.jsx";
 
 const DECADAS = ["Todas","70s","80s","90s","00s"];
 
+// Criterios de ordenación. `fn` recibe (a, b, stats) y devuelve el
+// comparador; las series sin datos van siempre al final.
+const ORDENES = [
+  { id:"año",     label:"Año",        icon:"📅" },
+  { id:"nota",    label:"Mejor nota", icon:"⭐" },
+  { id:"vistas",  label:"Más vistas", icon:"👁️" },
+  { id:"titulo",  label:"A-Z",        icon:"🔤" },
+];
+
 function StarRating({ rating, onRate, size=18, readonly=false }) {
   const [hover, setHover] = useState(0);
   const [lastClicked, setLC] = useState(null);
@@ -389,6 +398,8 @@ export default function App() {
   const [loadError, setLoadError]   = useState(null);
   const [decada, setDecada] = useState("Todas");
   const [busqueda, setBusqueda] = useState("");
+  const [orden, setOrden]       = useState("año");
+  const [ascendente, setAsc]    = useState(true);
   const [vistas, setVistas] = useState({});
   const [pendientes, setPendientes] = useState({});
   const [ratings, setRatings] = useState({});
@@ -479,9 +490,35 @@ export default function App() {
     setRatings(prev=>({...prev,[id]:r}));
   },[session]);
 
-  const seriesFiltradas=useMemo(()=>
-    series.filter(s=>(decada==="Todas"||s.decada===decada)&&s.titulo.toLowerCase().includes(busqueda.toLowerCase()))
-  ,[series,decada,busqueda]);
+  const seriesFiltradas=useMemo(()=>{
+    const q = busqueda.trim().toLowerCase();
+    const lista = series.filter(s =>
+      (decada==="Todas" || s.decada===decada) &&
+      (q === "" || s.titulo.toLowerCase().includes(q) ||
+                   (s.englishTitle||"").toLowerCase().includes(q) ||
+                   (s.cadena||"").toLowerCase().includes(q) ||
+                   s.generos.some(g=>g.toLowerCase().includes(q)))
+    );
+
+    // Las series sin datos de comunidad se quedan al final,
+    // independientemente de la dirección del orden.
+    const sinDato = (v) => v === null || v === undefined;
+    const dir = ascendente ? 1 : -1;
+
+    return [...lista].sort((a,b)=>{
+      if (orden === "titulo") return a.titulo.localeCompare(b.titulo,"es") * dir;
+      if (orden === "año")    return (a.año - b.año) * dir;
+
+      const campo = orden === "nota" ? "nota_media" : "vistas_totales";
+      const va = stats[a.id]?.[campo];
+      const vb = stats[b.id]?.[campo];
+      if (sinDato(va) && sinDato(vb)) return a.titulo.localeCompare(b.titulo,"es");
+      if (sinDato(va)) return 1;
+      if (sinDato(vb)) return -1;
+      if (Number(va) === Number(vb)) return a.titulo.localeCompare(b.titulo,"es");
+      return (Number(va) - Number(vb)) * dir;
+    });
+  },[series,decada,busqueda,orden,ascendente,stats]);
 
   const totalVistas=Object.values(vistas).filter(Boolean).length;
   const totalPendientes=Object.values(pendientes).filter(Boolean).length;
@@ -533,6 +570,27 @@ export default function App() {
                   <button key={d} className={d===decada?"btn btn-primary":"btn btn-secondary"} style={{ padding:"8px 16px", fontSize:13, borderRadius:24 }} onClick={()=>setDecada(d)}>{d}</button>
                 ))}
               </div>
+            </div>
+
+            {/* Ordenación */}
+            <div className="sort-bar animate-fadeUp delay-2">
+              <span className="sort-label">Ordenar por</span>
+              {ORDENES.map(o=>(
+                <button
+                  key={o.id}
+                  className={`sort-btn${orden===o.id?" active":""}`}
+                  onClick={()=>{
+                    if (orden===o.id) { setAsc(a=>!a); }
+                    // Al cambiar de criterio, la dirección más útil por
+                    // defecto: nota y vistas de mayor a menor, el resto al revés.
+                    else { setOrden(o.id); setAsc(!(o.id==="nota"||o.id==="vistas")); }
+                  }}
+                  title={orden===o.id ? "Pulsa para invertir el orden" : `Ordenar por ${o.label.toLowerCase()}`}
+                >
+                  <span>{o.icon}</span> {o.label}
+                  {orden===o.id && <em>{ascendente ? "↑" : "↓"}</em>}
+                </button>
+              ))}
             </div>
             <div style={{ display:"flex", gap:10, marginBottom:"1.5rem", flexWrap:"wrap" }} className="animate-fadeUp delay-3">
               {[{icon:"🎬",value:seriesFiltradas.length,label:"en catálogo"},{icon:"✅",value:totalVistas,label:"vistas"},{icon:"🕐",value:totalPendientes,label:"pendientes"}].map(s=>(
