@@ -1,6 +1,8 @@
 // src/components/Auth.jsx — estilo tebeo + validación endurecida
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import Portal from "./Portal.jsx";
+import { useModal } from "../lib/useModal";
 
 const MIN_PASS = 8;
 const USER_RE  = /^[a-zA-Z0-9_.-]{3,20}$/;
@@ -36,6 +38,7 @@ const SCORE_LABEL = ["Muy débil", "Débil", "Aceptable", "Buena", "Fuerte"];
 const SCORE_COLOR = ["#E8200A", "#E8200A", "#C86400", "#0044BB", "#008A3C"];
 
 export default function Auth({ onClose }) {
+  const modalRef = useModal(onClose);
   const [mode, setMode]     = useState("login");
   const [email, setEmail]   = useState("");
   const [password, setPass] = useState("");
@@ -84,7 +87,6 @@ export default function Auth({ onClose }) {
         setDone(true);
       }
     } catch (e) {
-      console.error("[Auth] error real:", e);   // ← temporal, para diagnosticar
       setError(friendlyError(e?.message));
     } finally {
       setLoad(false);
@@ -98,10 +100,11 @@ export default function Auth({ onClose }) {
   const linkBtn = { background:"none", border:"none", cursor:"pointer", color:"var(--accent)", fontFamily:"var(--font-display)", fontSize:15, letterSpacing:".04em", padding:0 };
 
   if (done) return (
+    <Portal>
     <div className="overlay" onClick={onClose}>
-      <div className="modal" style={{ maxWidth:400, padding:"2.5rem 2rem", textAlign:"center" }} onClick={e=>e.stopPropagation()}>
+      <div ref={modalRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="auth-ok" tabIndex={-1} style={{ maxWidth:400, padding:"2.5rem 2rem", textAlign:"center" }} onClick={e=>e.stopPropagation()}>
         <div style={{ fontSize:64, marginBottom:12 }}>🎉</div>
-        <p className="font-display" style={{ fontSize:30, color:"var(--accent)", marginBottom:10 }}>¡Cuenta creada!</p>
+        <p id="auth-ok" className="font-display" style={{ fontSize:30, color:"var(--accent)", marginBottom:10 }}>¡Cuenta creada!</p>
         <p style={{ color:"var(--text-muted)", fontSize:15, lineHeight:1.7, fontWeight:700 }}>
           Si tu proyecto pide confirmación, revisa el correo de <strong>{email}</strong>.
           Si no, ya puedes empezar a puntuar.
@@ -111,12 +114,14 @@ export default function Auth({ onClose }) {
         </button>
       </div>
     </div>
+    </Portal>
   );
 
   return (
+    <Portal>
     <div className="overlay" onClick={onClose}>
-      <div className="modal" style={{ maxWidth:400, padding:"2.2rem 2rem" }} onClick={e=>e.stopPropagation()}>
-        <p className="font-display" style={{ fontSize:34, color:"var(--accent)", textAlign:"center", marginBottom:4 }}>📺 AnimaFilm</p>
+      <div ref={modalRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="auth-titulo" tabIndex={-1} style={{ maxWidth:400, padding:"2.2rem 2rem" }} onClick={e=>e.stopPropagation()}>
+        <h2 id="auth-titulo" className="font-display" style={{ fontSize:34, color:"var(--accent)", textAlign:"center", marginBottom:4 }}>📺 AnimaFilm</h2>
         <p style={{ textAlign:"center", color:"var(--text-muted)", fontSize:14, marginBottom:"1.8rem", fontWeight:700 }}>
           {mode==="login" ? "Inicia sesión para guardar tu historial" : "Crea tu cuenta gratis"}
         </p>
@@ -184,5 +189,6 @@ export default function Auth({ onClose }) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

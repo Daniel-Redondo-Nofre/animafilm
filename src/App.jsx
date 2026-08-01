@@ -1,7 +1,12 @@
 // src/App.jsx — AnimaFilm v3 (diseño mejorado)
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { Routes, Route, NavLink, useNavigate, useMatch, useLocation, Link } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { fetchSeries, fetchSeriesStats } from "./lib/series";
+import { slugify, findBySlug } from "./lib/slug";
+import { EditarPerfil, BorrarCuenta } from "./components/GestionCuenta.jsx";
+import Portal from "./components/Portal.jsx";
+import { useModal } from "./lib/useModal";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
 import Auth from "./components/Auth.jsx";
 
@@ -22,7 +27,9 @@ function StarRating({ rating, onRate, size=18, readonly=false }) {
   const [hover, setHover] = useState(0);
   const [lastClicked, setLC] = useState(null);
   return (
-    <div style={{ display:"flex", gap:1 }}>
+    <div style={{ display:"flex", gap:1 }}
+         role={readonly ? undefined : "radiogroup"}
+         aria-label={readonly ? undefined : "Tu valoración, de 1 a 5 estrellas"}>
       {[1,2,3,4,5].map(i => (
         <button key={i}
           className={`star-btn${lastClicked===i?" active":""}`}
@@ -30,7 +37,9 @@ function StarRating({ rating, onRate, size=18, readonly=false }) {
           onMouseEnter={readonly?undefined:()=>setHover(i)}
           onMouseLeave={readonly?undefined:()=>setHover(0)}
           style={{ fontSize:size, width:size*1.2, height:size*1.2, cursor:readonly?"default":"pointer" }}
-          aria-label={`${i} estrella${i>1?"s":""}`}
+          role={readonly ? undefined : "radio"}
+          aria-checked={i === rating}
+          aria-label={`${i} ${i>1?"estrellas":"estrella"}${i===rating?" (tu valoración actual)":""}`}
         ><span className={i<=(hover||rating)?"star-on":"star-off"}>⭐</span></button>
       ))}
     </div>
@@ -59,9 +68,11 @@ function CardSkeleton() {
   );
 }
 
-function SerieCard({ serie, poster, stats, vista, pendiente, rating, onCardClick, onToggleVista, onTogglePendiente, onRate, animDelay=0 }) {
+function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVista, onTogglePendiente, onRate, animDelay=0 }) {
+  const url = `/serie/${slugify(serie.titulo)}`;
   return (
-    <div className={`card animate-fadeUp${vista?" watched":""}`} style={{ cursor:"pointer", animationDelay:`${animDelay}ms` }} onClick={onCardClick}>
+    <article className={`card animate-fadeUp${vista?" watched":""}`} style={{ animationDelay:`${animDelay}ms` }}>
+      <Link to={url} className="card-poster-link" tabIndex={-1} aria-hidden="true">
       <div className="card-poster" style={{ background:serie.color }}>
         {poster
           ? <img src={poster} alt={serie.titulo} loading="lazy" />
@@ -73,8 +84,9 @@ function SerieCard({ serie, poster, stats, vista, pendiente, rating, onCardClick
         {pendiente&&!vista && <div className="status-badge status-pendiente">🕐</div>}
         <span className="poster-badge">{serie.decada} · {serie.año}</span>
       </div>
+      </Link>
       <div className="card-body">
-        <div className="card-title truncate">{serie.titulo}</div>
+        <h3 className="card-title truncate"><Link to={url}>{serie.titulo}</Link></h3>
         <div className="card-meta">
           <span>{serie.cadena} · {serie.episodios} ep.</span>
           {stats?.nota_media != null && (
@@ -86,11 +98,17 @@ function SerieCard({ serie, poster, stats, vista, pendiente, rating, onCardClick
         </div>
         <div style={{ marginBottom:9 }}><StarRating rating={rating} onRate={onRate} size={15} /></div>
         <div style={{ display:"flex", gap:6 }}>
-          <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"5px 0", fontSize:11, borderRadius:8 }} onClick={e=>{ e.stopPropagation(); onToggleVista(); }}>{vista?"✓ Vista":"Marcar vista"}</button>
-          <button className={pendiente?"btn btn-warning":"btn btn-ghost"} style={{ padding:"5px 10px", fontSize:13, borderRadius:8 }} onClick={e=>{ e.stopPropagation(); onTogglePendiente(); }}>🕐</button>
+          <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"5px 0", fontSize:11, borderRadius:8 }}
+                  aria-pressed={vista}
+                  aria-label={vista?`Desmarcar ${serie.titulo} como vista`:`Marcar ${serie.titulo} como vista`}
+                  onClick={e=>{ e.stopPropagation(); onToggleVista(); }}>{vista?"✓ Vista":"Marcar vista"}</button>
+          <button className={pendiente?"btn btn-warning":"btn btn-ghost"} style={{ padding:"5px 10px", fontSize:13, borderRadius:8 }}
+                  aria-pressed={pendiente}
+                  aria-label={pendiente?`Quitar ${serie.titulo} de pendientes`:`Añadir ${serie.titulo} a pendientes`}
+                  onClick={e=>{ e.stopPropagation(); onTogglePendiente(); }}>🕐</button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -99,12 +117,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   const [myReview, setMyReview] = useState("");
   const [editing, setEditing] = useState(false);
   const [loadingR, setLoadingR] = useState(true);
-
-  useEffect(() => {
-    const h=(e)=>{ if(e.key==="Escape") onClose(); };
-    window.addEventListener("keydown",h);
-    return ()=>window.removeEventListener("keydown",h);
-  },[onClose]);
+  const modalRef = useModal(onClose);
 
   useEffect(()=>{
     (async()=>{
@@ -134,8 +147,9 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   }
 
   return (
+    <Portal>
     <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={e=>e.stopPropagation()}>
+      <div ref={modalRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="serie-titulo" tabIndex={-1} onClick={e=>e.stopPropagation()}>
         <div className="modal-head">
           <button className="modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
 
@@ -148,7 +162,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
           </div>
 
           <div className="modal-head-info">
-            <h2 className="modal-title font-display">{serie.titulo}</h2>
+            <h2 id="serie-titulo" className="modal-title font-display">{serie.titulo}</h2>
             <p className="modal-meta">{serie.año}</p>
             <p className="modal-meta">{serie.cadena}</p>
             <p className="modal-meta">{serie.episodios} episodios</p>
@@ -234,6 +248,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -298,7 +313,8 @@ function Feed({ user, onShowAuth, series }) {
   );
 }
 
-function MiPerfil({ user, onShowAuth, series }) {
+function MiPerfil({ user, onShowAuth, series, onProfileUpdate }) {
+  const [modal, setModal] = useState(null);   // null | "editar" | "borrar"
   const [stats, setStats] = useState({ vistas:0, ratings:0, reviews:0, avg:null });
   const [vistas, setVistas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -343,6 +359,17 @@ function MiPerfil({ user, onShowAuth, series }) {
         <div>
           <p className="font-display" style={{ fontSize:28, color:"var(--accent)" }}>{user.profile?.display_name||user.profile?.username}</p>
           <p style={{ fontSize:13, color:"var(--text-muted)" }}>@{user.profile?.username} · desde {new Date(user.created_at).getFullYear()}</p>
+          {user.profile?.bio && (
+            <p style={{ fontSize:14, color:"var(--text-muted)", fontWeight:700, marginTop:8, lineHeight:1.6, maxWidth:520 }}>
+              {user.profile.bio}
+            </p>
+          )}
+          <div style={{ display:"flex", gap:8, marginTop:12, flexWrap:"wrap" }}>
+            <button className="btn btn-secondary" style={{ fontSize:12, padding:"6px 14px" }}
+                    onClick={()=>setModal("editar")}>✏️ Editar perfil</button>
+            <button className="btn btn-ghost" style={{ fontSize:12, padding:"6px 14px" }}
+                    onClick={()=>setModal("borrar")}>⚙️ Mi cuenta</button>
+          </div>
         </div>
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", gap:14, marginBottom:"2rem" }}>
@@ -383,6 +410,32 @@ function MiPerfil({ user, onShowAuth, series }) {
         </div>
       )}
       {vistas.length===0&&<div style={{ textAlign:"center", padding:"3rem", color:"var(--text-muted)" }}><div style={{ fontSize:60, marginBottom:12 }}>📺</div><p className="font-display" style={{ fontSize:22, color:"var(--accent)" }}>¡Empieza tu historial!</p></div>}
+
+      {modal==="editar" && (
+        <EditarPerfil user={user} onClose={()=>setModal(null)} onSaved={onProfileUpdate} />
+      )}
+      {modal==="borrar" && (
+        <BorrarCuenta user={user} onClose={()=>setModal(null)} />
+      )}
+    </div>
+  );
+}
+
+function NoEncontrado() {
+  useEffect(()=>{ document.title = "Página no encontrada — AnimaFilm"; },[]);
+  return (
+    <div className="empty-state page-enter">
+      <div style={{ fontSize:76, marginBottom:4 }}>📺</div>
+      <p className="font-display" style={{ fontSize:56, color:"var(--accent)", lineHeight:1 }}>404</p>
+      <p className="font-display" style={{ fontSize:24, color:"var(--text)", marginBottom:10 }}>
+        Aquí no hay nada
+      </p>
+      <p style={{ color:"var(--text-muted)", fontSize:15, fontWeight:700, maxWidth:360, margin:"0 auto 1.5rem" }}>
+        Esta página no existe, como aquel episodio que jurabas haber visto y nadie más recuerda.
+      </p>
+      <Link className="btn btn-primary" style={{ fontSize:15, padding:"11px 26px" }} to="/">
+        Volver al catálogo
+      </Link>
     </div>
   );
 }
@@ -403,9 +456,26 @@ export default function App() {
   const [vistas, setVistas] = useState({});
   const [pendientes, setPendientes] = useState({});
   const [ratings, setRatings] = useState({});
-  const [serieActiva, setSerieActiva] = useState(null);
-  const [vistaActual, setVistaActual] = useState("catalogo");
   const [catalogLoaded, setCatalogLoaded] = useState(false);
+
+  const navigate    = useNavigate();
+  const location    = useLocation();
+  const matchSerie  = useMatch("/serie/:slug");
+  const slugActivo  = matchSerie?.params?.slug ?? null;
+
+  // La serie abierta se deduce de la URL, no de un estado aparte.
+  // Así el botón atrás del navegador y compartir enlaces funcionan solos.
+  const serieActiva = useMemo(
+    () => findBySlug(series, slugActivo),
+    [series, slugActivo]
+  );
+
+  const cerrarSerie = useCallback(() => {
+    // Si llegamos desde dentro de la app, volvemos atrás para no romper
+    // el historial. Si el usuario entró directo por el enlace, al catálogo.
+    if (location.key !== "default") navigate(-1);
+    else navigate("/", { replace: true });
+  }, [navigate, location.key]);
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>setSession(session));
@@ -417,10 +487,13 @@ export default function App() {
     return ()=>subscription.unsubscribe();
   },[]);
 
-  useEffect(()=>{
-    if(!session){ setProfile(null); return; }
-    supabase.from("profiles").select("*").eq("id",session.user.id).single().then(({data})=>setProfile(data));
+  const refreshProfile = useCallback(()=>{
+    if(!session) return;
+    supabase.from("profiles").select("*").eq("id",session.user.id).single()
+      .then(({data})=>setProfile(data));
   },[session]);
+
+  useEffect(()=>{ refreshProfile(); },[refreshProfile]);
 
   useEffect(()=>{
     if(!session) return;
@@ -520,65 +593,50 @@ export default function App() {
     });
   },[series,decada,busqueda,orden,ascendente,stats]);
 
+  // Título del documento según la ruta: mejora el historial del
+  // navegador, los marcadores y cómo se ve al compartir.
+  useEffect(()=>{
+    const base = "AnimaFilm — Series de tu infancia";
+    if (serieActiva)                     document.title = `${serieActiva.titulo} (${serieActiva.año}) — AnimaFilm`;
+    else if (location.pathname === "/comunidad") document.title = "Comunidad — AnimaFilm";
+    else if (location.pathname === "/perfil")    document.title = "Mi perfil — AnimaFilm";
+    else if (location.pathname === "/")          document.title = base;
+  },[serieActiva, location.pathname]);
+
   const totalVistas=Object.values(vistas).filter(Boolean).length;
   const totalPendientes=Object.values(pendientes).filter(Boolean).length;
 
   const NAV=[
-    {id:"catalogo",label:"📽️ Catálogo"},
-    {id:"feed",label:"🌐 Comunidad"},
-    {id:"miperfil",label:`⭐ Mi Perfil${totalVistas>0?` (${totalVistas})`:""}`},
+    {to:"/",          label:"📽️ Catálogo", end:true},
+    {to:"/comunidad", label:"🌐 Comunidad"},
+    {to:"/perfil",    label:`⭐ Mi Perfil${totalVistas>0?` (${totalVistas})`:""}`},
   ];
 
-  return (
-    <>
-      <header className="site-header">
-        <div style={{ maxWidth:1200, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", height:62, padding:"0 1.5rem", gap:10 }}>
-          <button
-            className="brand"
-            onClick={()=>{ setVistaActual("catalogo"); setDecada("Todas"); window.scrollTo({ top:0, behavior:"smooth" }); }}
-            title="Volver al catálogo"
-          >
-            <span style={{ fontSize:26 }}>📺</span>
-            <span className="font-display" style={{ fontSize:24 }}>AnimaFilm</span>
-          </button>
-          <nav style={{ display:"flex", gap:5, alignItems:"center" }}>
-            {NAV.map(v=>(
-              <button key={v.id} className={`nav-pill${vistaActual===v.id?" active":""}`} onClick={()=>setVistaActual(v.id)}>{v.label}</button>
-            ))}
-            <button className={`theme-toggle ${theme}`} onClick={toggleTheme} title="Cambiar tema" style={{ marginLeft:6 }}>
-              <div className="knob">{theme==="dark"?"🌙":"☀️"}</div>
-            </button>
-            {session
-              ?<button className="btn btn-ghost" style={{ color:"#FFD700", borderColor:"rgba(255,215,0,0.3)", fontSize:12, padding:"6px 12px", marginLeft:4 }} onClick={()=>supabase.auth.signOut()}>Salir</button>
-              :<button className="btn" style={{ background:"#FFD700", color:"var(--header-bg)", border:"none", fontSize:13, padding:"7px 16px", marginLeft:4 }} onClick={()=>{ setAuthMode("login"); setShowAuth(true); }}>Iniciar sesión</button>
-            }
-          </nav>
-        </div>
-      </header>
+  const pedirLogin = useCallback(()=>{ setAuthMode("login"); setShowAuth(true); }, []);
 
-      <main style={{ maxWidth:1200, margin:"0 auto", padding:"2rem 1.5rem" }}>
-        {vistaActual==="catalogo"&&(
-          <div className="page-enter">
+  const catalogo = (
+    <div className="page-enter">
             <div style={{ textAlign:"center", marginBottom:"2rem" }}>
               <h1 className="hero-title animate-fadeUp">Las series de tu infancia</h1>
               <p className="animate-fadeUp delay-1" style={{ color:"var(--text-muted)", fontSize:16, marginTop:8, maxWidth:480, margin:"8px auto 0" }}>Puntúa, reseña y recuerda las series que marcaron toda una generación</p>
             </div>
             <div style={{ display:"flex", gap:12, marginBottom:"1.2rem", flexWrap:"wrap", alignItems:"center" }} className="animate-fadeUp delay-2">
-              <input className="input" type="text" placeholder="🔍  Buscar serie…" defaultValue={busqueda} onChange={e=>{ clearTimeout(window._st); window._st=setTimeout(()=>setBusqueda(e.target.value),220); }} style={{ flex:1, minWidth:180 }}/>
-              <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              <input className="input" type="search" aria-label="Buscar serie por título, cadena o género" placeholder="🔍  Buscar serie…" defaultValue={busqueda} onChange={e=>{ clearTimeout(window._st); window._st=setTimeout(()=>setBusqueda(e.target.value),220); }} style={{ flex:1, minWidth:180 }}/>
+              <div role="group" aria-label="Filtrar por década" style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                 {DECADAS.map(d=>(
-                  <button key={d} className={d===decada?"btn btn-primary":"btn btn-secondary"} style={{ padding:"8px 16px", fontSize:13, borderRadius:24 }} onClick={()=>setDecada(d)}>{d}</button>
+                  <button key={d} className={d===decada?"btn btn-primary":"btn btn-secondary"} aria-pressed={d===decada} style={{ padding:"8px 16px", fontSize:13, borderRadius:24 }} onClick={()=>setDecada(d)}>{d}</button>
                 ))}
               </div>
             </div>
 
             {/* Ordenación */}
-            <div className="sort-bar animate-fadeUp delay-2">
+            <div className="sort-bar animate-fadeUp delay-2" role="group" aria-label="Ordenar catálogo">
               <span className="sort-label">Ordenar por</span>
               {ORDENES.map(o=>(
                 <button
                   key={o.id}
                   className={`sort-btn${orden===o.id?" active":""}`}
+                  aria-pressed={orden===o.id}
                   onClick={()=>{
                     if (orden===o.id) { setAsc(a=>!a); }
                     // Al cambiar de criterio, la dirección más útil por
@@ -592,7 +650,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div style={{ display:"flex", gap:10, marginBottom:"1.5rem", flexWrap:"wrap" }} className="animate-fadeUp delay-3">
+            <div aria-live="polite" style={{ display:"flex", gap:10, marginBottom:"1.5rem", flexWrap:"wrap" }} className="animate-fadeUp delay-3">
               {[{icon:"🎬",value:seriesFiltradas.length,label:"en catálogo"},{icon:"✅",value:totalVistas,label:"vistas"},{icon:"🕐",value:totalPendientes,label:"pendientes"}].map(s=>(
                 <div key={s.label} className="mini-stat"><span style={{ fontSize:16 }}>{s.icon}</span><span style={{ fontWeight:900, fontSize:16, color:"var(--accent)" }}>{s.value}</span><span style={{ fontSize:12, color:"var(--text-muted)", fontWeight:600 }}>{s.label}</span></div>
               ))}
@@ -609,14 +667,13 @@ export default function App() {
             )}
 
             {!catalogLoaded
-              ?<div className="series-grid">{Array(12).fill(0).map((_,i)=><CardSkeleton key={i}/>)}</div>
+              ?<div className="series-grid" aria-hidden="true">{Array(12).fill(0).map((_,i)=><CardSkeleton key={i}/>)}</div>
               :seriesFiltradas.length>0
                 ?<div className="series-grid">
                   {seriesFiltradas.map((serie,i)=>(
                     <SerieCard key={serie.id} serie={serie} poster={serie.poster} stats={stats[serie.id]}
                       vista={!!vistas[serie.id]} pendiente={!!pendientes[serie.id]} rating={ratings[serie.id]||0}
                       animDelay={Math.min(i*30,400)}
-                      onCardClick={()=>setSerieActiva(serie)}
                       onToggleVista={()=>toggleVista(serie.id)}
                       onTogglePendiente={()=>togglePendiente(serie.id)}
                       onRate={r=>setRating(serie.id,r)}
@@ -628,21 +685,82 @@ export default function App() {
                   <p className="font-display" style={{ fontSize:22, color:"var(--accent)" }}>No encontramos ninguna serie</p>
                 </div>
             }
-          </div>
-        )}
-        {vistaActual==="feed"&&<Feed user={user} onShowAuth={()=>{ setAuthMode("login"); setShowAuth(true); }}/>}
-        {vistaActual==="miperfil"&&<MiPerfil user={user} onShowAuth={()=>{ setAuthMode("login"); setShowAuth(true); }}/>}
+    </div>
+  );
+
+  return (
+    <>
+      {/* Primer elemento tabulable: permite saltarse la navegación */}
+      <a href="#contenido" className="skip-link">Saltar al contenido</a>
+
+      <header className="site-header">
+        <div style={{ maxWidth:1200, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", height:62, padding:"0 1.5rem", gap:10 }}>
+          <Link
+            to="/"
+            className="brand"
+            onClick={()=>{ setDecada("Todas"); window.scrollTo({ top:0, behavior:"smooth" }); }}
+            title="Volver al catálogo"
+          >
+            <span style={{ fontSize:26 }}>📺</span>
+            <span className="font-display" style={{ fontSize:24 }}>AnimaFilm</span>
+          </Link>
+          <nav aria-label="Navegación principal" style={{ display:"flex", gap:5, alignItems:"center" }}>
+            {NAV.map(v=>(
+              <NavLink key={v.to} to={v.to} end={v.end}
+                className={({isActive})=>`nav-pill${isActive?" active":""}`}>
+                {v.label}
+              </NavLink>
+            ))}
+            <button className={`theme-toggle ${theme}`} onClick={toggleTheme}
+                    role="switch" aria-checked={theme==="dark"}
+                    aria-label={theme==="dark"?"Cambiar a modo claro":"Cambiar a modo oscuro"}
+                    title="Cambiar tema" style={{ marginLeft:6 }}>
+              <div className="knob" aria-hidden="true">{theme==="dark"?"🌙":"☀️"}</div>
+            </button>
+            {session
+              ?<button className="btn btn-ghost" style={{ color:"#FFD700", borderColor:"rgba(255,215,0,0.3)", fontSize:12, padding:"6px 12px", marginLeft:4 }} onClick={()=>supabase.auth.signOut()}>Salir</button>
+              :<button className="btn" style={{ background:"#FFD700", color:"var(--header-bg)", border:"none", fontSize:13, padding:"7px 16px", marginLeft:4 }} onClick={()=>{ setAuthMode("login"); setShowAuth(true); }}>Iniciar sesión</button>
+            }
+          </nav>
+        </div>
+      </header>
+
+      <main id="contenido" style={{ maxWidth:1200, margin:"0 auto", padding:"2rem 1.5rem" }}>
+        <Routes>
+          <Route path="/"             element={catalogo} />
+          <Route path="/serie/:slug"  element={catalogo} />
+          <Route path="/comunidad"    element={<Feed user={user} series={series} onShowAuth={pedirLogin}/>} />
+          <Route path="/perfil"       element={<MiPerfil user={user} series={series} onShowAuth={pedirLogin} onProfileUpdate={refreshProfile}/>} />
+          <Route path="*"             element={<NoEncontrado/>} />
+        </Routes>
       </main>
+
+      {slugActivo && catalogLoaded && !serieActiva && (
+        <Portal>
+        <div className="overlay" onClick={cerrarSerie}>
+          <div className="modal" style={{ maxWidth:380, padding:"2.2rem 2rem", textAlign:"center" }} onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:56, marginBottom:10 }}>🔍</div>
+            <p className="font-display" style={{ fontSize:24, color:"var(--accent)", marginBottom:8 }}>Serie no encontrada</p>
+            <p style={{ color:"var(--text-muted)", fontSize:14, fontWeight:700, marginBottom:"1.4rem" }}>
+              No tenemos ninguna serie con esa dirección.
+            </p>
+            <button className="btn btn-primary" style={{ width:"100%", padding:"11px 0", fontSize:15 }} onClick={cerrarSerie}>
+              Ver el catálogo
+            </button>
+          </div>
+        </div>
+        </Portal>
+      )}
 
       {serieActiva&&(
         <SerieModal serie={serieActiva} poster={serieActiva.poster} stats={stats[serieActiva.id]}
           vista={!!vistas[serieActiva.id]} pendiente={!!pendientes[serieActiva.id]} rating={ratings[serieActiva.id]||0}
           user={user}
-          onClose={()=>setSerieActiva(null)}
+          onClose={cerrarSerie}
           onToggleVista={()=>toggleVista(serieActiva.id)}
           onTogglePendiente={()=>togglePendiente(serieActiva.id)}
           onRate={r=>setRating(serieActiva.id,r)}
-          onShowAuth={()=>{ setSerieActiva(null); setAuthMode("login"); setShowAuth(true); }}
+          onShowAuth={()=>{ cerrarSerie(); pedirLogin(); }}
         />
       )}
       {showAuth&&<Auth initialMode={authMode} onClose={()=>{ setShowAuth(false); setAuthMode("login"); }}/>}
