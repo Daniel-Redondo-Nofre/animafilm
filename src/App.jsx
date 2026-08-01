@@ -1,7 +1,7 @@
 // src/App.jsx — AnimaFilm v3 (diseño mejorado)
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "./lib/supabase";
-import { fetchAllPosters } from "./lib/tmdb";
+import { fetchPosters } from "./lib/posters";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
 import Auth from "./components/Auth.jsx";
 
@@ -150,19 +150,29 @@ function SerieModal({ serie, poster, vista, pendiente, rating, user, onClose, on
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
-        <div style={{ position:"relative", borderRadius:"22px 22px 0 0", overflow:"hidden", minHeight:poster?260:160, background:serie.color }}>
-          {poster&&<img src={poster} alt={serie.titulo} style={{ width:"100%", height:260, objectFit:"cover", display:"block" }}/>}
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(transparent 20%,rgba(0,0,0,0.82))", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"1.5rem 1.8rem 1.2rem" }}>
-            <button onClick={onClose} style={{ position:"absolute", top:14, right:14, background:"rgba(0,0,0,0.5)", color:"#fff", border:"none", borderRadius:"50%", width:34, height:34, fontSize:16, cursor:"pointer" }}>✕</button>
-            <h2 style={{ fontFamily:"'Fredoka One',cursive", fontSize:28, color:"#fff", marginBottom:4, textShadow:"0 2px 10px rgba(0,0,0,0.7)" }}>{serie.titulo}</h2>
-            <p style={{ color:"rgba(255,255,255,0.8)", fontSize:13 }}>{serie.año} · {serie.cadena} · {serie.episodios} episodios</p>
+        <div className="modal-head">
+          <button className="modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
+
+          {/* Póster completo, con su proporción real y enmarcado como viñeta */}
+          <div className="modal-poster" style={{ background:serie.color }}>
+            {poster
+              ? <img src={poster} alt={`Cartel de ${serie.titulo}`} />
+              : <span className="font-display">{serie.titulo}</span>
+            }
+          </div>
+
+          <div className="modal-head-info">
+            <h2 className="modal-title font-display">{serie.titulo}</h2>
+            <p className="modal-meta">{serie.año}</p>
+            <p className="modal-meta">{serie.cadena}</p>
+            <p className="modal-meta">{serie.episodios} episodios</p>
+            <div className="modal-genres">
+              {serie.generos.map(g=><span key={g} className="genre-chip">{g}</span>)}
+              <span className="chip chip-accent">{serie.decada}</span>
+            </div>
           </div>
         </div>
         <div style={{ padding:"1.5rem 1.8rem 2rem" }}>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:"1rem" }}>
-            {serie.generos.map(g=><span key={g} className="genre-chip">{g}</span>)}
-            <span className="chip chip-accent">{serie.decada}</span>
-          </div>
           <p style={{ color:"var(--text-muted)", lineHeight:1.75, fontSize:15, marginBottom:"1.5rem" }}>{serie.descripcion}</p>
           <div style={{ marginBottom:"1.2rem" }}>
             <p style={{ fontWeight:800, fontSize:11, color:"var(--accent)", marginBottom:10, letterSpacing:1.5, textTransform:"uppercase" }}>Tu valoración</p>
@@ -375,33 +385,12 @@ function MiPerfil({ user, onShowAuth }) {
   );
 }
 
-function InstallBanner() {
-  const [prompt, setPrompt] = useState(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(()=>{
-    const h=(e)=>{ e.preventDefault(); setPrompt(e); setVisible(true); };
-    window.addEventListener("beforeinstallprompt",h);
-    return ()=>window.removeEventListener("beforeinstallprompt",h);
-  },[]);
-  if(!visible) return null;
-  return (
-    <div className="install-banner">
-      <span style={{ fontSize:32 }}>📺</span>
-      <div style={{ flex:1 }}>
-        <p style={{ fontWeight:800, fontSize:14, color:"var(--text)", marginBottom:2 }}>Instalar AnimaFilm</p>
-        <p style={{ fontSize:12, color:"var(--text-muted)" }}>Añade la app a tu pantalla de inicio</p>
-      </div>
-      <button className="btn btn-primary" style={{ fontSize:13, padding:"8px 16px" }} onClick={async()=>{ await prompt.prompt(); setVisible(false); }}>Instalar</button>
-      <button className="btn btn-ghost" style={{ fontSize:13, padding:"8px 12px" }} onClick={()=>setVisible(false)}>✕</button>
-    </div>
-  );
-}
-
 export default function App() {
   const { theme, toggleTheme } = useThemeToggle();
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
   const [posters, setPosters] = useState({});
   const [decada, setDecada] = useState("Todas");
   const [busqueda, setBusqueda] = useState("");
@@ -414,7 +403,11 @@ export default function App() {
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>setSession(session));
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((_,s)=>setSession(s));
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((evento, s)=>{
+      setSession(s);
+      // El usuario vuelve desde el enlace de "recuperar contraseña"
+      if (evento === "PASSWORD_RECOVERY") { setAuthMode("update"); setShowAuth(true); }
+    });
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -439,9 +432,9 @@ export default function App() {
   },[session]);
 
   useEffect(()=>{
-    // Carga progresiva: actualiza la UI tras cada lote de 6 series
-    fetchAllPosters(SERIES, 6, (partial) => setPosters(partial)).then(setPosters);
-    setTimeout(()=>setCatalogLoaded(true), 80);
+    // Una única consulta a Supabase en lugar de 30 peticiones a TMDB
+    fetchPosters(SERIES).then(p => { setPosters(p); setCatalogLoaded(true); });
+    setTimeout(()=>setCatalogLoaded(true), 1500); // red de seguridad
   },[]);
 
   const user=session?{...session.user,profile}:null;
@@ -514,7 +507,7 @@ export default function App() {
             </button>
             {session
               ?<button className="btn btn-ghost" style={{ color:"#FFD700", borderColor:"rgba(255,215,0,0.3)", fontSize:12, padding:"6px 12px", marginLeft:4 }} onClick={()=>supabase.auth.signOut()}>Salir</button>
-              :<button className="btn" style={{ background:"#FFD700", color:"var(--header-bg)", border:"none", fontSize:13, padding:"7px 16px", marginLeft:4 }} onClick={()=>setShowAuth(true)}>Iniciar sesión</button>
+              :<button className="btn" style={{ background:"#FFD700", color:"var(--header-bg)", border:"none", fontSize:13, padding:"7px 16px", marginLeft:4 }} onClick={()=>{ setAuthMode("login"); setShowAuth(true); }}>Iniciar sesión</button>
             }
           </nav>
         </div>
@@ -562,8 +555,8 @@ export default function App() {
             }
           </div>
         )}
-        {vistaActual==="feed"&&<Feed user={user} onShowAuth={()=>setShowAuth(true)}/>}
-        {vistaActual==="miperfil"&&<MiPerfil user={user} onShowAuth={()=>setShowAuth(true)}/>}
+        {vistaActual==="feed"&&<Feed user={user} onShowAuth={()=>{ setAuthMode("login"); setShowAuth(true); }}/>}
+        {vistaActual==="miperfil"&&<MiPerfil user={user} onShowAuth={()=>{ setAuthMode("login"); setShowAuth(true); }}/>}
       </main>
 
       {serieActiva&&(
@@ -574,11 +567,10 @@ export default function App() {
           onToggleVista={()=>toggleVista(serieActiva.id)}
           onTogglePendiente={()=>togglePendiente(serieActiva.id)}
           onRate={r=>setRating(serieActiva.id,r)}
-          onShowAuth={()=>{ setSerieActiva(null); setShowAuth(true); }}
+          onShowAuth={()=>{ setSerieActiva(null); setAuthMode("login"); setShowAuth(true); }}
         />
       )}
-      {showAuth&&<Auth onClose={()=>setShowAuth(false)}/>}
-      <InstallBanner/>
+      {showAuth&&<Auth initialMode={authMode} onClose={()=>{ setShowAuth(false); setAuthMode("login"); }}/>}
     </>
   );
 }
