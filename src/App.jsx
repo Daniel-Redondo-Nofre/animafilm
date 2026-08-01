@@ -1,14 +1,17 @@
 // src/App.jsx — AnimaFilm v3 (diseño mejorado)
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { Routes, Route, NavLink, useNavigate, useMatch, useLocation, Link } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { fetchSeries, fetchSeriesStats, poster as posterTam } from "./lib/series";
 import { slugify, findBySlug } from "./lib/slug";
-import { EditarPerfil, BorrarCuenta } from "./components/GestionCuenta.jsx";
+const EditarPerfil  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.EditarPerfil })));
+const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 import Portal from "./components/Portal.jsx";
 import { useModal } from "./lib/useModal";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
-import Auth from "./components/Auth.jsx";
+// Estos componentes solo aparecen al pulsar algo: no deben pesar
+// en la descarga inicial.
+const Auth          = lazy(() => import("./components/Auth.jsx"));
 
 
 
@@ -411,12 +414,14 @@ function MiPerfil({ user, onShowAuth, series, onProfileUpdate }) {
       )}
       {vistas.length===0&&<div style={{ textAlign:"center", padding:"3rem", color:"var(--text-muted)" }}><div style={{ fontSize:60, marginBottom:12 }}>📺</div><p className="font-display" style={{ fontSize:22, color:"var(--accent)" }}>¡Empieza tu historial!</p></div>}
 
-      {modal==="editar" && (
-        <EditarPerfil user={user} onClose={()=>setModal(null)} onSaved={onProfileUpdate} />
-      )}
-      {modal==="borrar" && (
-        <BorrarCuenta user={user} onClose={()=>setModal(null)} />
-      )}
+      <Suspense fallback={null}>
+        {modal==="editar" && (
+          <EditarPerfil user={user} onClose={()=>setModal(null)} onSaved={onProfileUpdate} />
+        )}
+        {modal==="borrar" && (
+          <BorrarCuenta user={user} onClose={()=>setModal(null)} />
+        )}
+      </Suspense>
     </div>
   );
 }
@@ -722,8 +727,8 @@ export default function App() {
               <div className="knob" aria-hidden="true">{theme==="dark"?"🌙":"☀️"}</div>
             </button>
             {session
-              ?<button className="btn btn-ghost" style={{ color:"#FFD700", borderColor:"rgba(255,215,0,0.3)", fontSize:12, padding:"6px 12px", marginLeft:4 }} onClick={()=>supabase.auth.signOut()}>Salir</button>
-              :<button className="btn" style={{ background:"#FFD700", color:"var(--header-bg)", border:"none", fontSize:13, padding:"7px 16px", marginLeft:4 }} onClick={()=>{ setAuthMode("login"); setShowAuth(true); }}>Iniciar sesión</button>
+              ?<button className="btn btn-ghost" style={{ color:"var(--header-text)", borderColor:"color-mix(in srgb, var(--header-text) 40%, transparent)", fontSize:12, padding:"6px 12px", marginLeft:4 }} onClick={()=>supabase.auth.signOut()}>Salir</button>
+              :<button className="btn" style={{ background:"var(--header-text)", color:"var(--header-bg)", border:"none", fontSize:13, padding:"7px 16px", marginLeft:4 }} onClick={()=>{ setAuthMode("login"); setShowAuth(true); }}>Iniciar sesión</button>
             }
           </nav>
         </div>
@@ -767,7 +772,9 @@ export default function App() {
           onShowAuth={()=>{ cerrarSerie(); pedirLogin(); }}
         />
       )}
-      {showAuth&&<Auth initialMode={authMode} onClose={()=>{ setShowAuth(false); setAuthMode("login"); }}/>}
+      <Suspense fallback={null}>
+        {showAuth&&<Auth initialMode={authMode} onClose={()=>{ setShowAuth(false); setAuthMode("login"); }}/>}
+      </Suspense>
     </>
   );
 }

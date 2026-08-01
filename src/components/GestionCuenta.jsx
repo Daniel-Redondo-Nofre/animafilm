@@ -85,7 +85,7 @@ export function EditarPerfil({ user, onClose, onSaved }) {
                  onChange={e=>setUsername(e.target.value)} />
           <div aria-live="polite" style={{ minHeight:18, marginTop:5, fontSize:12, fontWeight:700 }}>
             {estado==="comprobando" && <span style={{ color:"var(--text-faint)" }}>Comprobando…</span>}
-            {estado==="libre"       && <span style={{ color:"var(--verde, #008A3C)" }}>✓ Disponible</span>}
+            {estado==="libre"       && <span style={{ color:"var(--verde-ok)" }}>✓ Disponible</span>}
             {estado==="ocupado"     && <span style={{ color:"var(--rojo)" }}>✕ Ya está cogido</span>}
           </div>
         </div>

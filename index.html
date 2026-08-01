@@ -12,8 +12,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://image.tmdb.org" />
-    <link rel="stylesheet"
+    <!-- Las fuentes las inyecta theme-init.js sin bloquear el pintado.
+         El preload las pone en cola desde ya. -->
+    <link rel="preload" as="style"
           href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,700&display=swap" />
+    <noscript>
+      <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,700&display=swap" />
+    </noscript>
     <title>AnimaFilm — Series de tu infancia</title>
     <meta name="description" content="Puntúa y recuerda las series animadas de la infancia española, de los años 70 hasta los 2000." />
     <meta property="og:title" content="AnimaFilm" />

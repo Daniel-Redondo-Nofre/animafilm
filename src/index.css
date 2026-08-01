@@ -30,6 +30,7 @@
   --rojo:          #C01200;
   --amarillo:      #FFD600;
   --azul:          #0044BB;
+  --verde-ok:      #00742F;   /* 5.5 sobre el papel */
 
   --accent:        #C01200;
   --accent-fg:     #FFE873;
@@ -69,8 +70,10 @@
   --radius-sm:     4px;
   --radius-pill:   999px;
 
-  --font-display:  'Bangers', cursive;
-  --font-body:     'Comic Neue', cursive;
+  /* Reservas con métricas parecidas: mientras llegan las webfonts
+     el texto se ve con una alternativa local, no en blanco. */
+  --font-display:  'Bangers', 'Impact', 'Haettenschweiler', sans-serif;
+  --font-body:     'Comic Neue', 'Trebuchet MS', 'Segoe UI', sans-serif;
 
   --t-fast:        0.12s ease;
   --t-spring:      0.2s cubic-bezier(0.34,1.56,0.64,1);
@@ -95,6 +98,7 @@
   --rojo:          #FF4A2E;
   --amarillo:      #FFC93C;
   --azul:          #5B8CFF;
+  --verde-ok:      #4FDD8A;   /* claro, para el fondo oscuro */
 
   --accent:        #FFC93C;
   --accent-fg:     #14121F;
