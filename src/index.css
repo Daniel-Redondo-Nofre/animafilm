@@ -1052,3 +1052,82 @@ body > * { position: relative; z-index: 1; }
   .toast-stack { bottom: 12px; }
   .toast { font-size: 13px; padding: 10px 12px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BOTÓN DE GOOGLE Y SEPARADOR
+   ═══════════════════════════════════════════════════════════════════════ */
+.btn-google {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 11px 0;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 15px; letter-spacing: .04em;
+  cursor: pointer;
+  box-shadow: var(--sh-btn);
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.btn-google:hover:not(:disabled) {
+  transform: translate(-2px,-2px);
+  box-shadow: var(--sh-btn-hover);
+}
+.btn-google:active { transform: translate(3px,3px); box-shadow: none; }
+.btn-google:disabled { opacity: .5; cursor: not-allowed; }
+
+.separador {
+  display: flex; align-items: center; gap: 12px;
+  margin: 1.1rem 0;
+  color: var(--text-faint);
+  font-size: 12px; font-weight: 700;
+}
+.separador::before, .separador::after {
+  content: ''; flex: 1; height: 2px;
+  background: repeating-linear-gradient(90deg,
+    var(--border) 0 6px, transparent 6px 11px);
+  opacity: .5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FILTRO POR GÉNERO
+   ═══════════════════════════════════════════════════════════════════════ */
+.genre-bar {
+  display: flex; align-items: center; gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: .9rem;
+}
+.genre-pill {
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 800; font-size: 12px;
+  cursor: pointer;
+  transition: transform var(--t-fast), background-color var(--t-fast), color var(--t-fast);
+}
+.genre-pill:hover { transform: translateY(-2px); color: var(--text); }
+.genre-pill.active {
+  background: var(--accent2);
+  color: var(--accent2-fg);
+  border-color: var(--border);
+  box-shadow: 2px 2px 0 var(--border);
+}
+
+/* Los géneros del modal son botones que filtran el catálogo */
+.genre-chip-btn {
+  cursor: pointer;
+  font-family: var(--font-display);
+}
+.genre-chip-btn:hover {
+  background: var(--accent2);
+  color: var(--accent2-fg);
+  transform: translateY(-2px) rotate(-1deg);
+}
+
+@media (max-width: 600px) {
+  .genre-pill { font-size: 11px; padding: 3px 9px; }
+  .genre-bar .sort-label { width: 100%; margin-bottom: 2px; }
+}

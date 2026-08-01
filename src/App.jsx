@@ -119,7 +119,24 @@ function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVis
   );
 }
 
-function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onClose, onToggleVista, onTogglePendiente, onRate, onShowAuth }) {
+function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onClose, onToggleVista, onTogglePendiente, onRate, onShowAuth, onFiltrarGenero }) {
+  // En móvil abre el menú nativo de compartir; en escritorio copia el enlace.
+  async function compartir() {
+    const url   = `${window.location.origin}/serie/${slugify(serie.titulo)}`;
+    const texto = `${serie.titulo} (${serie.año}) en AnimaFilm`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: texto, text: texto, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.ok("Enlace copiado al portapapeles");
+    } catch (e) {
+      // AbortError = el usuario cerró el menú de compartir. No es un fallo.
+      if (e?.name !== "AbortError") toast.error("No hemos podido copiar el enlace.");
+    }
+  }
+
   const [reviews, setReviews] = useState([]);
   const [myReview, setMyReview] = useState("");
   const [editing, setEditing] = useState(false);
@@ -197,7 +214,11 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             <p className="modal-meta">{serie.cadena}</p>
             <p className="modal-meta">{serie.episodios} episodios</p>
             <div className="modal-genres">
-              {serie.generos.map(g=><span key={g} className="genre-chip">{g}</span>)}
+              {serie.generos.map(g=>(
+                <button key={g} className="genre-chip genre-chip-btn"
+                        onClick={()=>onFiltrarGenero?.(g)}
+                        title={`Ver todas las series de ${g}`}>{g}</button>
+              ))}
               <span className="chip chip-accent">{serie.decada}</span>
             </div>
           </div>
@@ -228,6 +249,10 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
           <div style={{ display:"flex", gap:10, marginBottom:"2rem" }}>
             <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"11px 0", fontSize:14 }} onClick={onToggleVista}>{vista?"✓ Ya la he visto":"Marcar como vista"}</button>
             <button className={pendiente?"btn btn-warning":"btn btn-ghost"} style={{ padding:"11px 18px", fontSize:14 }} onClick={onTogglePendiente}>{pendiente?"🕐 Guardada":"🕐 Pendiente"}</button>
+            <button className="btn btn-ghost" style={{ padding:"11px 16px", fontSize:14 }}
+                    onClick={compartir} aria-label={`Compartir ${serie.titulo}`} title="Compartir">
+              🔗
+            </button>
           </div>
           <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:20, color:"var(--accent)", marginBottom:"1rem" }}>💬 Reseñas ({reviews.length})</h3>
           {user?(
@@ -483,6 +508,7 @@ export default function App() {
   const [loadError, setLoadError]   = useState(null);
   const [decada, setDecada] = useState("Todas");
   const [busqueda, setBusqueda] = useState("");
+  const [genero, setGenero]     = useState("Todos");
   const [orden, setOrden]       = useState("año");
   const [ascendente, setAsc]    = useState(true);
   const [vistas, setVistas] = useState({});
@@ -503,6 +529,13 @@ export default function App() {
     () => findBySlug(series, slugActivo),
     [series, slugActivo]
   );
+
+  const filtrarPorGenero = useCallback((g) => {
+    setGenero(g);
+    setDecada("Todas");
+    navigate("/");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [navigate]);
 
   const cerrarSerie = useCallback(() => {
     // Si llegamos desde dentro de la app, volvemos atrás para no romper
@@ -637,10 +670,19 @@ export default function App() {
     fetchSeriesStats().then(setStats).catch(()=>{});
   },[session,ratings,pedirLogin]);
 
+  // Los géneros salen del propio catálogo: si añades una serie con un
+  // género nuevo, aparece solo en el filtro.
+  const GENEROS = useMemo(()=>{
+    const set = new Set();
+    series.forEach(s => s.generos.forEach(g => set.add(g)));
+    return ["Todos", ...[...set].sort((a,b)=>a.localeCompare(b,"es"))];
+  },[series]);
+
   const seriesFiltradas=useMemo(()=>{
     const q = busqueda.trim().toLowerCase();
     const lista = series.filter(s =>
       (decada==="Todas" || s.decada===decada) &&
+      (genero==="Todos" || s.generos.includes(genero)) &&
       (q === "" || s.titulo.toLowerCase().includes(q) ||
                    (s.englishTitle||"").toLowerCase().includes(q) ||
                    (s.cadena||"").toLowerCase().includes(q) ||
@@ -665,7 +707,7 @@ export default function App() {
       if (Number(va) === Number(vb)) return a.titulo.localeCompare(b.titulo,"es");
       return (Number(va) - Number(vb)) * dir;
     });
-  },[series,decada,busqueda,orden,ascendente,stats]);
+  },[series,decada,genero,busqueda,orden,ascendente,stats]);
 
   // Título del documento según la ruta: mejora el historial del
   // navegador, los marcadores y cómo se ve al compartir.
@@ -700,6 +742,19 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            {/* Géneros */}
+            {GENEROS.length > 1 && (
+              <div className="genre-bar animate-fadeUp delay-2" role="group" aria-label="Filtrar por género">
+                <span className="sort-label">Género</span>
+                {GENEROS.map(g=>(
+                  <button key={g}
+                          className={`genre-pill${genero===g?" active":""}`}
+                          aria-pressed={genero===g}
+                          onClick={()=>setGenero(g)}>{g}</button>
+                ))}
+              </div>
+            )}
 
             {/* Ordenación */}
             <div className="sort-bar animate-fadeUp delay-2" role="group" aria-label="Ordenar catálogo">
@@ -838,6 +893,7 @@ export default function App() {
           onTogglePendiente={()=>togglePendiente(serieActiva.id)}
           onRate={r=>setRating(serieActiva.id,r)}
           onShowAuth={()=>{ cerrarSerie(); pedirLogin(); }}
+          onFiltrarGenero={filtrarPorGenero}
         />
       )}
       <Toasts />
