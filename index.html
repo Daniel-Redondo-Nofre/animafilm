@@ -4,15 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/icon-192.png" />
     <meta name="theme-color" content="#D91800" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#07060E"  media="(prefers-color-scheme: dark)"  />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="AnimaFilm" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
 
     <!-- SEO -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,13 +16,16 @@
     <meta property="og:title" content="AnimaFilm" />
     <meta property="og:description" content="Las series animadas de tu infancia española" />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
 
-    <!-- Tema aplicado antes del primer pintado (fichero externo: CSP estricta) -->
+    <!-- Tema aplicado antes del primer pintado -->
     <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <script src="/sw-register.js" defer></script>
+    <!-- Limpieza del service worker de la versión PWA anterior -->
+    <script src="/sw-cleanup.js" defer></script>
   </body>
 </html>

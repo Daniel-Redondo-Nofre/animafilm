@@ -545,23 +545,6 @@ body > * { position: relative; z-index: 1; }
 [data-theme="dark"] .poster-badge { box-shadow: 2px 2px 0 #0D0D0D, 0 0 14px rgba(255,201,60,.5); }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   BANNER PWA
-   ═══════════════════════════════════════════════════════════════════════ */
-.install-banner {
-  position: fixed; bottom: 20px; left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--bg-card);
-  border: 3px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  display: flex; align-items: center; gap: 12px;
-  box-shadow: 6px 6px 0 var(--border);
-  z-index: 300;
-  width: calc(100% - 40px); max-width: 420px;
-  animation: slideDown .35s cubic-bezier(.34,1.56,.64,1);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
    GRID / UTILIDADES
    ═══════════════════════════════════════════════════════════════════════ */
 .series-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px,1fr)); gap: 22px; }
@@ -704,4 +687,91 @@ body > * { position: relative; z-index: 1; }
   font-weight: 800; font-size: 13px;
   color: var(--text);
   margin-bottom: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CABECERA DEL MODAL — ficha de tebeo
+   El póster ya no se recorta como banda de fondo: se muestra entero,
+   con su proporción 2:3 y enmarcado en tinta, junto a la ficha técnica.
+   ═══════════════════════════════════════════════════════════════════════ */
+.modal-head {
+  position: relative;
+  display: flex;
+  gap: 18px;
+  padding: 22px 22px 18px;
+  border-bottom: var(--border-w) solid var(--border);
+  background-image: radial-gradient(circle, var(--dots) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+.modal-poster {
+  flex: 0 0 132px;
+  width: 132px;
+  aspect-ratio: 2 / 3;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-poster img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;          /* llena el marco sin deformar */
+}
+.modal-poster span {
+  font-size: 17px; color: #fff;
+  text-align: center; padding: 0 8px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  line-height: 1.15;
+}
+
+.modal-head-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex; flex-direction: column;
+  padding-right: 34px;        /* hueco para la X */
+}
+.modal-title {
+  font-size: clamp(22px, 4.5vw, 30px);
+  color: var(--accent);
+  line-height: 1.05;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+[data-theme="dark"] .modal-title {
+  color: #FFE9A8;
+  text-shadow: 0 0 14px rgba(255,201,60,.45);
+}
+.modal-meta {
+  font-size: 13px; font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.modal-genres {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.modal-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  font-size: 15px; line-height: 1;
+  cursor: pointer; z-index: 5;
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-fast), background-color var(--t-fast);
+}
+.modal-close:hover  { background: var(--accent); color: var(--accent-fg); transform: translate(-1px,-1px); }
+.modal-close:active { transform: translate(2px,2px); box-shadow: none; }
+
+@media (max-width: 460px) {
+  .modal-head { gap: 14px; padding: 18px 16px 14px; }
+  .modal-poster { flex: 0 0 104px; width: 104px; }
+  .modal-title { font-size: 21px; }
+  .modal-meta  { font-size: 12px; }
 }
