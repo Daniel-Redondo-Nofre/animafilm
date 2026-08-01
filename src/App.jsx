@@ -1,42 +1,11 @@
 // src/App.jsx — AnimaFilm v3 (diseño mejorado)
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "./lib/supabase";
-import { fetchPosters } from "./lib/posters";
+import { fetchSeries, fetchSeriesStats } from "./lib/series";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
 import Auth from "./components/Auth.jsx";
 
-const SERIES = [
-  { id:1,  titulo:"Heidi",                     englishTitle:"Heidi",                año:1974, decada:"70s", cadena:"TVE 1",          episodios:52,   generos:["Drama","Aventura"],           descripcion:"Niña huérfana que vive en los Alpes suizos con su abuelo. Una de las series más queridas de la infancia española.", color:"#C47A3A" },
-  { id:2,  titulo:"Marco",                      englishTitle:"3000 Leagues",          año:1976, decada:"70s", cadena:"TVE 1",          episodios:52,   generos:["Drama","Aventura"],           descripcion:"Un niño genovés viaja desde Italia hasta Argentina en busca de su madre emigrante.", color:"#4A7E5A" },
-  { id:3,  titulo:"Érase una vez el hombre",   englishTitle:"Once Upon a Time Man",  año:1978, decada:"70s", cadena:"TVE 1",          episodios:26,   generos:["Educativo","Historia"],       descripcion:"Serie educativa que narra la historia de la humanidad desde la prehistoria hasta el siglo XX.", color:"#4A6E9A" },
-  { id:4,  titulo:"Don Quijote de la Mancha",  englishTitle:"Don Quixote",           año:1979, decada:"70s", cadena:"TVE 1",          episodios:39,   generos:["Aventura","Comedia"],         descripcion:"Adaptación animada de la obra maestra de Cervantes. Producción íntegramente española.", color:"#8A5E30" },
-  { id:5,  titulo:"La abeja Maya",             englishTitle:"Maya the Bee",          año:1975, decada:"70s", cadena:"TVE 1",          episodios:104,  generos:["Infantil","Aventura"],        descripcion:"Las aventuras de Maya, una pequeña abeja curiosa que explora el mundo de los insectos.", color:"#C8A820" },
-  { id:6,  titulo:"Mazinger Z",                englishTitle:"Mazinger Z",            año:1978, decada:"70s", cadena:"TVE 1",          episodios:92,   generos:["Acción","Mecha"],             descripcion:"El robot gigante pilotado por Koji Kabuto lucha contra el infame Doctor Infierno.", color:"#2A5E8A" },
-  { id:7,  titulo:"Vicky el vikingo",          englishTitle:"Vicky the Viking",      año:1974, decada:"70s", cadena:"TVE 1",          episodios:78,   generos:["Aventura","Comedia"],         descripcion:"El pequeño Vicky usa su ingenio en lugar de la fuerza para resolver problemas.", color:"#B85A40" },
-  { id:8,  titulo:"Los Pitufos",               englishTitle:"The Smurfs",            año:1981, decada:"80s", cadena:"TVE 1",          episodios:256,  generos:["Infantil","Fantasía"],        descripcion:"Los pequeños seres azules del bosque, siempre perseguidos por el malvado Gargamel.", color:"#2A50A0" },
-  { id:9,  titulo:"David el gnomo",            englishTitle:"The World of David the Gnome", año:1985, decada:"80s", cadena:"TVE 1", episodios:26,   generos:["Infantil","Fantasía"],        descripcion:"Producción española sobre un médico gnomo que ayuda a los animales del bosque.", color:"#3A8A4A" },
-  { id:10, titulo:"Oliver y Benji",            englishTitle:"Captain Tsubasa",       año:1983, decada:"80s", cadena:"TVE 1",          episodios:128,  generos:["Deporte","Drama"],            descripcion:"Las aventuras futbolísticas de Oliver Atom y su mejor amigo Benji.", color:"#1A7040" },
-  { id:11, titulo:"Bola de Dragón",            englishTitle:"Dragon Ball",           año:1986, decada:"80s", cadena:"TVE 1",          episodios:153,  generos:["Acción","Aventura"],          descripcion:"Las aventuras del joven Goku en busca de las siete esferas del dragón.", color:"#C07010" },
-  { id:12, titulo:"Inspector Gadget",          englishTitle:"Inspector Gadget",      año:1983, decada:"80s", cadena:"La 2",           episodios:86,   generos:["Comedia","Acción"],           descripcion:"El torpe inspector biónico lucha contra MAD, ayudado en secreto por su sobrina Penny.", color:"#6A4A90" },
-  { id:13, titulo:"Doraemon",                  englishTitle:"Doraemon",              año:1988, decada:"80s", cadena:"TVE 1",          episodios:1787, generos:["Comedia","Ciencia ficción"],  descripcion:"El gato robot del futuro ayuda al torpe Nobita con sus fantásticos inventos.", color:"#1A70C0" },
-  { id:14, titulo:"Thundercats",               englishTitle:"ThunderCats",           año:1985, decada:"80s", cadena:"TVE 1",          episodios:130,  generos:["Acción","Fantasía"],          descripcion:"Los felinos humanoides del planeta Thundera luchan con la Espada del Augurio.", color:"#A04030" },
-  { id:15, titulo:"Candy Candy",               englishTitle:"Candy Candy",           año:1982, decada:"80s", cadena:"TVE 1",          episodios:115,  generos:["Romance","Drama"],            descripcion:"Las peripecias de la huerfanita Candy en su búsqueda del amor y la felicidad.", color:"#B84870" },
-  { id:16, titulo:"Dragon Ball Z",             englishTitle:"Dragon Ball Z",         año:1990, decada:"90s", cadena:"Telecinco",      episodios:291,  generos:["Acción","Aventura"],          descripcion:"Goku y sus amigos defienden la Tierra contra supervillanos. La infancia de toda una generación.", color:"#C02010" },
-  { id:17, titulo:"Sailor Moon",               englishTitle:"Sailor Moon",           año:1993, decada:"90s", cadena:"Telecinco",      episodios:200,  generos:["Acción","Romance"],           descripcion:"Usagi Tsukino protege el amor y la justicia como la guerrera Sailor Moon.", color:"#B03878" },
-  { id:18, titulo:"Los Caballeros del Zodiaco",englishTitle:"Saint Seiya",           año:1991, decada:"90s", cadena:"TVE 1",          episodios:114,  generos:["Acción","Aventura"],          descripcion:"Los Caballeros de Atenea luchan para proteger a la diosa y a la humanidad.", color:"#2A4890" },
-  { id:19, titulo:"Shin Chan",                 englishTitle:"Crayon Shin-chan",      año:1993, decada:"90s", cadena:"Telecinco",      episodios:1200, generos:["Comedia"],                    descripcion:"Las gamberradas del irreverente niño de cinco años Shinnosuke Nohara.", color:"#C09010" },
-  { id:20, titulo:"Pokémon",                   englishTitle:"Pokemon",               año:1998, decada:"90s", cadena:"TVE 1",          episodios:1200, generos:["Aventura","Acción"],          descripcion:"Ash Ketchum y Pikachu viajan para convertirse en Maestros Pokémon.", color:"#C09A00" },
-  { id:21, titulo:"Digimon",                   englishTitle:"Digimon",               año:1999, decada:"90s", cadena:"Fox Kids",        episodios:54,   generos:["Aventura","Acción"],          descripcion:"Niños transportados al Mundo Digital donde hacen amistad con criaturas que evolucionan.", color:"#2858A0" },
-  { id:22, titulo:"Ranma 1/2",                 englishTitle:"Ranma 1/2",             año:1992, decada:"90s", cadena:"TVE 1",          episodios:161,  generos:["Comedia","Acción"],           descripcion:"Un joven que se transforma en chica al contacto con el agua fría.", color:"#A01818" },
-  { id:23, titulo:"Dexter",                    englishTitle:"Dexter's Laboratory",   año:1998, decada:"90s", cadena:"Cartoon Network", episodios:78,  generos:["Comedia","Ciencia ficción"],  descripcion:"Un joven genio con laboratorio secreto que su hermana Dee Dee siempre acaba destrozando.", color:"#6030A0" },
-  { id:24, titulo:"Cardcaptor Sakura",          englishTitle:"Cardcaptor Sakura",    año:1999, decada:"90s", cadena:"TVE 1",          episodios:70,   generos:["Fantasía","Romance"],         descripcion:"Sakura debe recuperar las Cartas Clow que liberó accidentalmente.", color:"#A03878" },
-  { id:25, titulo:"Bob Esponja",               englishTitle:"SpongeBob SquarePants", año:1999, decada:"00s", cadena:"Nickelodeon",    episodios:400,  generos:["Comedia","Infantil"],         descripcion:"Las aventuras de la esponja más optimista del fondo marino en el colorido Fondo de Bikini.", color:"#A08800" },
-  { id:26, titulo:"Naruto",                    englishTitle:"Naruto",                año:2002, decada:"00s", cadena:"Jetix",          episodios:220,  generos:["Acción","Aventura"],          descripcion:"Un joven ninja sueña con convertirse en Hokage y ser reconocido por todos.", color:"#C06010" },
-  { id:27, titulo:"Yu-Gi-Oh!",                 englishTitle:"Yu-Gi-Oh!",             año:2001, decada:"00s", cadena:"Cartoon Network", episodios:224, generos:["Acción","Deporte"],           descripcion:"Yugi y el espíritu del Faraón compiten en duelos de cartas mágicas para salvar el mundo.", color:"#6830A0" },
-  { id:28, titulo:"Kim Possible",              englishTitle:"Kim Possible",          año:2002, decada:"00s", cadena:"Disney Channel",  episodios:87,   generos:["Acción","Comedia"],           descripcion:"Una adolescente salva el mundo de supervillanos mientras lidia con el instituto.", color:"#2A7040" },
-  { id:29, titulo:"Los Lunnis",                englishTitle:"Los Lunnis",            año:2003, decada:"00s", cadena:"La 2",           episodios:1000, generos:["Infantil","Musical"],         descripcion:"Los coloridos muñecos de TVE acompañaban a los más pequeños con canciones y aventuras.", color:"#208070" },
-  { id:30, titulo:"Inuyasha",                  englishTitle:"Inuyasha",              año:2002, decada:"00s", cadena:"Jetix",          episodios:167,  generos:["Acción","Romance"],           descripcion:"Una chica moderna viaja al Japón feudal y lucha junto al semidemon Inuyasha.", color:"#903060" },
-];
+
 
 const DECADAS = ["Todas","70s","80s","90s","00s"];
 
@@ -81,7 +50,7 @@ function CardSkeleton() {
   );
 }
 
-function SerieCard({ serie, poster, vista, pendiente, rating, onCardClick, onToggleVista, onTogglePendiente, onRate, animDelay=0 }) {
+function SerieCard({ serie, poster, stats, vista, pendiente, rating, onCardClick, onToggleVista, onTogglePendiente, onRate, animDelay=0 }) {
   return (
     <div className={`card animate-fadeUp${vista?" watched":""}`} style={{ cursor:"pointer", animationDelay:`${animDelay}ms` }} onClick={onCardClick}>
       <div className="card-poster" style={{ background:serie.color }}>
@@ -97,7 +66,15 @@ function SerieCard({ serie, poster, vista, pendiente, rating, onCardClick, onTog
       </div>
       <div className="card-body">
         <div className="card-title truncate">{serie.titulo}</div>
-        <div style={{ fontSize:11, color:"var(--text-muted)", marginBottom:8 }}>{serie.cadena} · {serie.episodios} ep.</div>
+        <div className="card-meta">
+          <span>{serie.cadena} · {serie.episodios} ep.</span>
+          {stats?.nota_media != null && (
+            <span className="card-avg" title={`${stats.votos} ${stats.votos===1?"voto":"votos"} de la comunidad`}>
+              ⭐ {Number(stats.nota_media).toFixed(1)}
+              <em>({stats.votos})</em>
+            </span>
+          )}
+        </div>
         <div style={{ marginBottom:9 }}><StarRating rating={rating} onRate={onRate} size={15} /></div>
         <div style={{ display:"flex", gap:6 }}>
           <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"5px 0", fontSize:11, borderRadius:8 }} onClick={e=>{ e.stopPropagation(); onToggleVista(); }}>{vista?"✓ Vista":"Marcar vista"}</button>
@@ -108,7 +85,7 @@ function SerieCard({ serie, poster, vista, pendiente, rating, onCardClick, onTog
   );
 }
 
-function SerieModal({ serie, poster, vista, pendiente, rating, user, onClose, onToggleVista, onTogglePendiente, onRate, onShowAuth }) {
+function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onClose, onToggleVista, onTogglePendiente, onRate, onShowAuth }) {
   const [reviews, setReviews] = useState([]);
   const [myReview, setMyReview] = useState("");
   const [editing, setEditing] = useState(false);
@@ -174,6 +151,22 @@ function SerieModal({ serie, poster, vista, pendiente, rating, user, onClose, on
         </div>
         <div style={{ padding:"1.5rem 1.8rem 2rem" }}>
           <p style={{ color:"var(--text-muted)", lineHeight:1.75, fontSize:15, marginBottom:"1.5rem" }}>{serie.descripcion}</p>
+          {stats?.nota_media != null && (
+            <div className="community-box">
+              <div className="community-score">
+                <span className="community-num">{Number(stats.nota_media).toFixed(1)}</span>
+                <span className="community-max">/5</span>
+              </div>
+              <div className="community-detail">
+                <strong>Nota de la comunidad</strong>
+                <span>
+                  {stats.votos} {stats.votos===1?"voto":"votos"}
+                  {stats.vistas_totales>0 && ` · ${stats.vistas_totales} la han visto`}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div style={{ marginBottom:"1.2rem" }}>
             <p style={{ fontWeight:800, fontSize:11, color:"var(--accent)", marginBottom:10, letterSpacing:1.5, textTransform:"uppercase" }}>Tu valoración</p>
             <StarRating rating={rating} onRate={onRate} size={28}/>
@@ -235,7 +228,7 @@ function SerieModal({ serie, poster, vista, pendiente, rating, user, onClose, on
   );
 }
 
-function Feed({ user, onShowAuth }) {
+function Feed({ user, onShowAuth, series }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(()=>{
@@ -254,7 +247,7 @@ function Feed({ user, onShowAuth }) {
       setItems(all); setLoading(false);
     })();
   },[]);
-  const getSerie=id=>SERIES.find(s=>s.id===id);
+  const getSerie=id=>series.find(s=>s.id===id);
   if(!user) return (
     <div style={{ textAlign:"center", padding:"5rem 2rem" }} className="animate-fadeUp">
       <div style={{ fontSize:72, marginBottom:16 }}>🌐</div>
@@ -296,7 +289,7 @@ function Feed({ user, onShowAuth }) {
   );
 }
 
-function MiPerfil({ user, onShowAuth }) {
+function MiPerfil({ user, onShowAuth, series }) {
   const [stats, setStats] = useState({ vistas:0, ratings:0, reviews:0, avg:null });
   const [vistas, setVistas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -311,10 +304,10 @@ function MiPerfil({ user, onShowAuth }) {
       const ids=(w||[]).map(x=>x.serie_id);
       const avg=r?.length?(r.reduce((a,b)=>a+b.rating,0)/r.length).toFixed(1):null;
       setStats({ vistas:ids.length, ratings:r?.length||0, reviews:rev?.length||0, avg });
-      setVistas(SERIES.filter(s=>ids.includes(s.id)));
+      setVistas(series.filter(s=>ids.includes(s.id)));
       setLoading(false);
     })();
-  },[user]);
+  },[user, series]);
   if(!user) return (
     <div style={{ textAlign:"center", padding:"5rem 2rem" }} className="animate-fadeUp">
       <div style={{ fontSize:72, marginBottom:16 }}>👤</div>
@@ -357,7 +350,7 @@ function MiPerfil({ user, onShowAuth }) {
           <h3 className="font-display" style={{ fontSize:18, color:"var(--accent)", marginBottom:"1rem" }}>📊 Progreso por década</h3>
           {["70s","80s","90s","00s"].map(d=>{
             const count=vistas.filter(s=>s.decada===d).length;
-            const total=SERIES.filter(s=>s.decada===d).length;
+            const total=series.filter(s=>s.decada===d).length;
             return (
               <div key={d} style={{ marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:700, color:"var(--text)", marginBottom:4 }}><span>{d}</span><span style={{ color:"var(--text-muted)" }}>{count}/{total}</span></div>
@@ -391,7 +384,9 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
-  const [posters, setPosters] = useState({});
+  const [series, setSeries]         = useState([]);
+  const [stats, setStats]           = useState({});
+  const [loadError, setLoadError]   = useState(null);
   const [decada, setDecada] = useState("Todas");
   const [busqueda, setBusqueda] = useState("");
   const [vistas, setVistas] = useState({});
@@ -433,7 +428,18 @@ export default function App() {
 
   useEffect(()=>{
     // Una única consulta a Supabase en lugar de 30 peticiones a TMDB
-    fetchPosters(SERIES).then(p => { setPosters(p); setCatalogLoaded(true); });
+    fetchSeries()
+      .then(list => {
+        setSeries(list);
+        setCatalogLoaded(true);
+        // Las estadísticas van después: no deben retrasar el catálogo
+        fetchSeriesStats().then(setStats);
+      })
+      .catch(err => {
+        setLoadError("No hemos podido cargar el catálogo. Revisa tu conexión.");
+        setCatalogLoaded(true);
+        console.error("[series]", err);
+      });
     setTimeout(()=>setCatalogLoaded(true), 1500); // red de seguridad
   },[]);
 
@@ -474,8 +480,8 @@ export default function App() {
   },[session]);
 
   const seriesFiltradas=useMemo(()=>
-    SERIES.filter(s=>(decada==="Todas"||s.decada===decada)&&s.titulo.toLowerCase().includes(busqueda.toLowerCase()))
-  ,[decada,busqueda]);
+    series.filter(s=>(decada==="Todas"||s.decada===decada)&&s.titulo.toLowerCase().includes(busqueda.toLowerCase()))
+  ,[series,decada,busqueda]);
 
   const totalVistas=Object.values(vistas).filter(Boolean).length;
   const totalPendientes=Object.values(pendientes).filter(Boolean).length;
@@ -533,12 +539,23 @@ export default function App() {
                 <div key={s.label} className="mini-stat"><span style={{ fontSize:16 }}>{s.icon}</span><span style={{ fontWeight:900, fontSize:16, color:"var(--accent)" }}>{s.value}</span><span style={{ fontSize:12, color:"var(--text-muted)", fontWeight:600 }}>{s.label}</span></div>
               ))}
             </div>
+            {loadError && (
+              <div className="load-error" role="alert">
+                <span style={{ fontSize:34 }}>📡</span>
+                <div>
+                  <strong>{loadError}</strong>
+                  <button className="btn btn-secondary" style={{ marginTop:10, fontSize:13 }}
+                          onClick={()=>window.location.reload()}>Reintentar</button>
+                </div>
+              </div>
+            )}
+
             {!catalogLoaded
               ?<div className="series-grid">{Array(12).fill(0).map((_,i)=><CardSkeleton key={i}/>)}</div>
               :seriesFiltradas.length>0
                 ?<div className="series-grid">
                   {seriesFiltradas.map((serie,i)=>(
-                    <SerieCard key={serie.id} serie={serie} poster={posters[serie.id]}
+                    <SerieCard key={serie.id} serie={serie} poster={serie.poster} stats={stats[serie.id]}
                       vista={!!vistas[serie.id]} pendiente={!!pendientes[serie.id]} rating={ratings[serie.id]||0}
                       animDelay={Math.min(i*30,400)}
                       onCardClick={()=>setSerieActiva(serie)}
@@ -560,7 +577,7 @@ export default function App() {
       </main>
 
       {serieActiva&&(
-        <SerieModal serie={serieActiva} poster={posters[serieActiva.id]}
+        <SerieModal serie={serieActiva} poster={serieActiva.poster} stats={stats[serieActiva.id]}
           vista={!!vistas[serieActiva.id]} pendiente={!!pendientes[serieActiva.id]} rating={ratings[serieActiva.id]||0}
           user={user}
           onClose={()=>setSerieActiva(null)}

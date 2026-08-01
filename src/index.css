@@ -775,3 +775,65 @@ body > * { position: relative; z-index: 1; }
   .modal-title { font-size: 21px; }
   .modal-meta  { font-size: 12px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NOTA DE LA COMUNIDAD
+   ═══════════════════════════════════════════════════════════════════════ */
+.card-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px; margin-bottom: 8px;
+  font-size: 11px; color: var(--text-muted);
+}
+.card-meta > span:first-child {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-avg {
+  display: inline-flex; align-items: center; gap: 3px;
+  flex-shrink: 0;
+  font-weight: 800; color: var(--text);
+  background: var(--bg-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+}
+.card-avg em { font-style: normal; color: var(--text-faint); font-weight: 700; }
+
+.community-box {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px;
+  margin-bottom: 1.2rem;
+  background: var(--bg-muted);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sh-btn);
+}
+.community-score { display: flex; align-items: baseline; gap: 1px; }
+.community-num {
+  font-family: var(--font-display);
+  font-size: 40px; line-height: 1;
+  color: var(--accent);
+}
+[data-theme="dark"] .community-num { text-shadow: 0 0 14px rgba(255,201,60,.45); }
+.community-max { font-family: var(--font-display); font-size: 18px; color: var(--text-faint); }
+.community-detail { display: flex; flex-direction: column; gap: 2px; }
+.community-detail strong {
+  font-family: var(--font-display); font-size: 15px;
+  color: var(--text); letter-spacing: .04em;
+}
+.community-detail span { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ERROR DE CARGA
+   ═══════════════════════════════════════════════════════════════════════ */
+.load-error {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px; margin-bottom: 1.5rem;
+  background: var(--bg-card);
+  border: var(--border-w) solid var(--rojo);
+  border-radius: var(--radius);
+  box-shadow: 4px 4px 0 var(--rojo);
+}
+.load-error strong {
+  display: block; font-size: 15px; font-weight: 800; color: var(--text);
+}
