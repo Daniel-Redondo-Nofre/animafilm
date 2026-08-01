@@ -62,3 +62,11 @@ export async function fetchSeriesStats() {
 }
 
 export function clearSeriesCache() { cache = null; }
+
+// Los pósters se guardan en w342. En la rejilla las tarjetas miden ~165px,
+// así que servir w342 gasta el doble de datos de lo necesario. w185 cubre
+// pantallas normales y de retina razonablemente.
+export function poster(url, tam = "w185") {
+  if (!url) return null;
+  return url.replace(/\/w\d+\//, `/${tam}/`);
+}

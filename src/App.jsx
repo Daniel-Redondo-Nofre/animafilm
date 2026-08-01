@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Routes, Route, NavLink, useNavigate, useMatch, useLocation, Link } from "react-router-dom";
 import { supabase } from "./lib/supabase";
-import { fetchSeries, fetchSeriesStats } from "./lib/series";
+import { fetchSeries, fetchSeriesStats, poster as posterTam } from "./lib/series";
 import { slugify, findBySlug } from "./lib/slug";
 import { EditarPerfil, BorrarCuenta } from "./components/GestionCuenta.jsx";
 import Portal from "./components/Portal.jsx";
@@ -75,7 +75,7 @@ function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVis
       <Link to={url} className="card-poster-link" tabIndex={-1} aria-hidden="true">
       <div className="card-poster" style={{ background:serie.color }}>
         {poster
-          ? <img src={poster} alt={serie.titulo} loading="lazy" />
+          ? <img src={posterTam(poster,"w185")} alt="" width="185" height="278" loading="lazy" decoding="async" />
           : <div className="card-poster-fallback">
               <span className="font-display">{serie.titulo}</span>
             </div>
@@ -156,7 +156,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
           {/* Póster completo, con su proporción real y enmarcado como viñeta */}
           <div className="modal-poster" style={{ background:serie.color }}>
             {poster
-              ? <img src={poster} alt={`Cartel de ${serie.titulo}`} />
+              ? <img src={posterTam(poster,"w342")} alt={`Cartel de ${serie.titulo}`} width="342" height="513" />
               : <span className="font-display">{serie.titulo}</span>
             }
           </div>
@@ -665,6 +665,10 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Encabezado de sección: la rejilla pasaba de h1 a h3.
+                Va oculto visualmente, pero ordena el documento. */}
+            <h2 className="sr-only">Catálogo de series</h2>
 
             {!catalogLoaded
               ?<div className="series-grid" aria-hidden="true">{Array(12).fill(0).map((_,i)=><CardSkeleton key={i}/>)}</div>

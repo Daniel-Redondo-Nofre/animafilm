@@ -7,7 +7,10 @@
             viñetas que parecen paneles iluminados.
    ═══════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,700&display=swap');
+/* Las fuentes se cargan desde index.html con <link>.
+   Un @import aquí obliga al navegador a: descargar el CSS → leerlo →
+   descubrir el import → descargar las fuentes. Esa cadena en serie era
+   la mayor parte de los 1200 ms de bloqueo de renderizado. */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -22,19 +25,19 @@
 
   --text:          #0D0D0D;
   --text-muted:    #4A3A20;
-  --text-faint:    #7A6640;
+  --text-faint:    #6A5530;
 
-  --rojo:          #E8200A;
+  --rojo:          #C01200;
   --amarillo:      #FFD600;
   --azul:          #0044BB;
 
-  --accent:        #E8200A;
-  --accent-fg:     #FFD600;
+  --accent:        #C01200;
+  --accent-fg:     #FFE873;
   --accent2:       #0044BB;
   --accent2-fg:    #FFFFFF;
 
-  --header-bg:     #D91800;
-  --header-text:   #FFD600;
+  --header-bg:     #C21500;
+  --header-text:   #FFE873;
   --header-border: #0D0D0D;
   --header-glow:   none;
 
@@ -87,7 +90,7 @@
 
   --text:          #F4EBD2;   /* papel cálido sobre azul frío */
   --text-muted:    #A79BC4;
-  --text-faint:    #6E6490;
+  --text-faint:    #9A90C0;
 
   --rojo:          #FF4A2E;
   --amarillo:      #FFC93C;
