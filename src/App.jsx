@@ -7,6 +7,8 @@ import { slugify, findBySlug } from "./lib/slug";
 const EditarPerfil  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.EditarPerfil })));
 const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 import Portal from "./components/Portal.jsx";
+import { fetchSeguidos, buscarUsuarios } from "./lib/social";
+const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
 import { useModal } from "./lib/useModal";
 import { Toasts, toast, mensajeDeError } from "./lib/toast.jsx";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
@@ -293,8 +295,10 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             :reviews.filter(r=>r.user_id!==user?.id).map(r=>(
               <div key={r.id} className="review-card animate-fadeUp" style={{ marginBottom:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  <Avatar username={r.profiles?.username} size={28}/>
-                  <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{r.profiles?.display_name||r.profiles?.username}</span>
+                  <Link to={`/u/${r.profiles?.username}`}><Avatar username={r.profiles?.username} size={28}/></Link>
+                  <Link to={`/u/${r.profiles?.username}`} className="enlace-usuario" onClick={onClose}>
+                    <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{r.profiles?.display_name||r.profiles?.username}</span>
+                  </Link>
                   <span style={{ fontSize:11, color:"var(--text-faint)" }}>{new Date(r.created_at).toLocaleDateString("es-ES")}</span>
                 </div>
                 <p style={{ fontSize:14, color:"var(--text-muted)", lineHeight:1.7 }}>{r.content}</p>
@@ -310,15 +314,40 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
 }
 
 function Feed({ user, onShowAuth, series }) {
+  const [ambito, setAmbito]     = useState("todos");   // todos | siguiendo
+  const [seguidos, setSeguidos] = useState(null);
+  const [busca, setBusca]       = useState("");
+  const [hallados, setHallados] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  // A quién sigue el usuario: hace falta para filtrar el feed
   useEffect(()=>{
+    if(!user){ setSeguidos([]); return; }
+    fetchSeguidos(user.id).then(setSeguidos).catch(()=>setSeguidos([]));
+  },[user]);
+
+  // Búsqueda de usuarios, con retardo para no consultar en cada tecla
+  useEffect(()=>{
+    if(busca.trim().length < 2){ setHallados([]); return; }
+    const t = setTimeout(()=>{ buscarUsuarios(busca).then(setHallados); }, 320);
+    return ()=>clearTimeout(t);
+  },[busca]);
+
+  useEffect(()=>{
+    if(ambito==="siguiendo" && seguidos===null) return;
     (async()=>{
       setLoading(true);
+
+      // Filtrar en el servidor y no en el navegador: si algún día hay
+      // miles de usuarios, traérselo todo para descartarlo aquí sería
+      // insostenible.
+      const filtrar = (q) =>
+        ambito==="siguiendo" ? q.in("user_id", seguidos.length ? seguidos : ["00000000-0000-0000-0000-000000000000"]) : q;
+
       const [{ data:r },{ data:w },{ data:rev }]=await Promise.all([
-        supabase.from("ratings").select("*,profiles(username,display_name)").order("created_at",{ascending:false}).limit(40),
-        supabase.from("watched").select("*,profiles(username,display_name)").order("watched_at",{ascending:false}).limit(40),
-        supabase.from("reviews").select("*,profiles(username,display_name)").order("created_at",{ascending:false}).limit(40),
+        filtrar(supabase.from("ratings").select("*,profiles(username,display_name)")).order("created_at",{ascending:false}).limit(40),
+        filtrar(supabase.from("watched").select("*,profiles(username,display_name)")).order("watched_at",{ascending:false}).limit(40),
+        filtrar(supabase.from("reviews").select("*,profiles(username,display_name)")).order("created_at",{ascending:false}).limit(40),
       ]);
       const all=[
         ...(r||[]).map(x=>({type:"rating",date:x.created_at,...x})),
@@ -327,7 +356,7 @@ function Feed({ user, onShowAuth, series }) {
       ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,50);
       setItems(all); setLoading(false);
     })();
-  },[]);
+  },[ambito, seguidos]);
   const getSerie=id=>series.find(s=>s.id===id);
   if(!user) return (
     <div style={{ textAlign:"center", padding:"5rem 2rem" }} className="animate-fadeUp">
@@ -339,7 +368,41 @@ function Feed({ user, onShowAuth, series }) {
   );
   return (
     <div className="page-enter">
-      <h2 className="font-display" style={{ fontSize:34, color:"var(--accent)", marginBottom:"1.5rem" }}>🌐 Feed de la comunidad</h2>
+      <h2 className="font-display" style={{ fontSize:34, color:"var(--accent)", marginBottom:"1rem" }}>🌐 Comunidad</h2>
+
+      {/* Buscar gente a la que seguir */}
+      <div style={{ position:"relative", marginBottom:"1rem" }}>
+        <input className="input" type="search" value={busca}
+               onChange={e=>setBusca(e.target.value)}
+               aria-label="Buscar usuarios por nombre"
+               placeholder="🔍  Buscar usuarios…" />
+        {hallados.length > 0 && (
+          <div className="buscador-resultados">
+            {hallados.map(u=>(
+              <Link key={u.id} to={`/u/${u.username}`} className="resultado-usuario"
+                    onClick={()=>{ setBusca(""); setHallados([]); }}>
+                <Avatar username={u.username} size={32}/>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <strong>{u.display_name || u.username}</strong>
+                  <span>@{u.username} · {u.vistas} vistas</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Ámbito del feed */}
+      <div className="sort-bar" role="group" aria-label="Ámbito del feed">
+        {[
+          { id:"todos",     label:"🌍 Todos" },
+          { id:"siguiendo", label:`👥 Siguiendo${seguidos?.length ? ` (${seguidos.length})` : ""}` },
+        ].map(t=>(
+          <button key={t.id} className={`sort-btn${ambito===t.id?" active":""}`}
+                  aria-pressed={ambito===t.id}
+                  onClick={()=>setAmbito(t.id)}>{t.label}</button>
+        ))}
+      </div>
       {loading
         ?Array(5).fill(0).map((_,i)=><div key={i} className="feed-item animate-fadeUp" style={{ marginBottom:12, animationDelay:`${i*60}ms` }}><Skeleton width={38} height={38} style={{ borderRadius:"50%" }}/><div style={{ flex:1 }}><Skeleton height={14} width="70%" style={{ marginBottom:6 }}/><Skeleton height={11} width="40%"/></div></div>)
         :items.length===0
@@ -917,13 +980,16 @@ export default function App() {
       </header>
 
       <main id="contenido" style={{ maxWidth:1200, margin:"0 auto", padding:"2rem 1.5rem" }}>
+        <Suspense fallback={null}>
         <Routes>
           <Route path="/"             element={catalogo} />
           <Route path="/serie/:slug"  element={catalogo} />
           <Route path="/comunidad"    element={<Feed user={user} series={series} onShowAuth={pedirLogin}/>} />
           <Route path="/perfil"       element={<MiPerfil user={user} series={series} onShowAuth={pedirLogin} onProfileUpdate={refreshProfile}/>} />
+          <Route path="/u/:username"  element={<PerfilPublico user={user} series={series} onShowAuth={pedirLogin}/>} />
           <Route path="*"             element={<NoEncontrado/>} />
         </Routes>
+        </Suspense>
       </main>
 
       {slugActivo && catalogLoaded && !serieActiva && (
