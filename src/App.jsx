@@ -9,6 +9,10 @@ const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m
 import Portal from "./components/Portal.jsx";
 import { fetchSeguidos, buscarUsuarios } from "./lib/social";
 const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
+const DetalleLista  = lazy(() => import("./components/Listas.jsx"));
+const Estadisticas  = lazy(() => import("./components/Estadisticas.jsx"));
+const AnadirALista  = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.AnadirALista })));
+const MisListas     = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.MisListas })));
 import { useModal } from "./lib/useModal";
 import { Toasts, toast, mensajeDeError } from "./lib/toast.jsx";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
@@ -160,6 +164,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   const hasMyReview=reviews.some(r=>r.user_id===user?.id);
 
   const [guardando, setGuardando] = useState(false);
+  const [mostrarListas, setMostrarListas] = useState(false);
 
   async function recargarReseñas(){
     const {data}=await supabase.from("reviews").select("*,profiles(username,display_name)").eq("serie_id",serie.id).order("created_at",{ascending:false});
@@ -254,6 +259,11 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"11px 0", fontSize:14 }} onClick={onToggleVista}>{vista?"✓ Ya la he visto":"Marcar como vista"}</button>
             <button className={pendiente?"btn btn-warning":"btn btn-ghost"} style={{ padding:"11px 18px", fontSize:14 }} onClick={onTogglePendiente}>{pendiente?"🕐 Guardada":"🕐 Pendiente"}</button>
             <button className="btn btn-ghost" style={{ padding:"11px 16px", fontSize:14 }}
+                    onClick={()=> user ? setMostrarListas(true) : onShowAuth?.()}
+                    aria-label={`Añadir ${serie.titulo} a una lista`} title="Añadir a lista">
+              📋
+            </button>
+            <button className="btn btn-ghost" style={{ padding:"11px 16px", fontSize:14 }}
                     onClick={compartir} aria-label={`Compartir ${serie.titulo}`} title="Compartir">
               🔗
             </button>
@@ -307,6 +317,12 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
           }
           {!loadingR&&reviews.length===0&&<p style={{ color:"var(--text-faint)", fontSize:14, textAlign:"center", padding:"1rem" }}>Sé el primero en reseñar esta serie</p>}
         </div>
+
+        {mostrarListas && user && (
+          <Suspense fallback={null}>
+            <AnadirALista user={user} serie={serie} onClose={()=>setMostrarListas(false)} />
+          </Suspense>
+        )}
       </div>
     </div>
     </Portal>
@@ -532,7 +548,12 @@ function MiPerfil({ user, onShowAuth, series, onProfileUpdate }) {
       {vistas.length===0&&<div style={{ textAlign:"center", padding:"3rem", color:"var(--text-muted)" }}><div style={{ fontSize:60, marginBottom:12 }}>📺</div><p className="font-display" style={{ fontSize:22, color:"var(--accent)" }}>¡Empieza tu historial!</p></div>}
 
       <Suspense fallback={null}>
-        {modal==="editar" && (
+        <h3 className="font-display" style={{ fontSize:22, color:"var(--accent)", marginTop:"2rem" }}>📋 Mis listas</h3>
+      <Suspense fallback={<div className="skeleton" style={{ height:80, marginTop:"1rem" }}/>}>
+        <MisListas user={user} propias />
+      </Suspense>
+
+      {modal==="editar" && (
           <EditarPerfil user={user} onClose={()=>setModal(null)} onSaved={onProfileUpdate} />
         )}
         {modal==="borrar" && (
@@ -830,6 +851,7 @@ export default function App() {
   const NAV=[
     {to:"/",          label:"📽️ Catálogo", end:true},
     {to:"/comunidad", label:"🌐 Comunidad"},
+    {to:"/estadisticas", label:"📊 Datos"},
     {to:"/perfil",    label:`⭐ Mi Perfil${totalVistas>0?` (${totalVistas})`:""}`},
   ];
 
@@ -987,6 +1009,8 @@ export default function App() {
           <Route path="/comunidad"    element={<Feed user={user} series={series} onShowAuth={pedirLogin}/>} />
           <Route path="/perfil"       element={<MiPerfil user={user} series={series} onShowAuth={pedirLogin} onProfileUpdate={refreshProfile}/>} />
           <Route path="/u/:username"  element={<PerfilPublico user={user} series={series} onShowAuth={pedirLogin}/>} />
+          <Route path="/lista/:id"    element={<DetalleLista user={user} series={series}/>} />
+          <Route path="/estadisticas" element={<Estadisticas/>} />
           <Route path="*"             element={<NoEncontrado/>} />
         </Routes>
         </Suspense>

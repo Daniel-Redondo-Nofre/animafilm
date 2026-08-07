@@ -1,5 +1,5 @@
 // src/components/PerfilPublico.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   fetchPerfilPublico, fetchColeccion, fetchResenasDe,
@@ -7,6 +7,7 @@ import {
 } from "../lib/social";
 import { slugify } from "../lib/slug";
 import { toast } from "../lib/toast.jsx";
+const MisListas = lazy(() => import("./Listas.jsx").then(m => ({ default: m.MisListas })));
 
 function Avatar({ username, size = 36 }) {
   const COLORS = ["#7A0000", "#1A5A9A", "#3A8A4A", "#6030A0", "#C07010"];
@@ -240,6 +241,7 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
         {[
           { id: "vistas",  label: `📺 Vistas (${seriesVistas.length})` },
           { id: "resenas", label: `💬 Reseñas (${resenas.length})` },
+          { id: "listas",  label: "📋 Listas" },
         ].map(t => (
           <button key={t.id} role="tab" aria-selected={pestana === t.id}
                   className={`sort-btn${pestana === t.id ? " active" : ""}`}
@@ -250,7 +252,11 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
       </div>
 
       {/* ── Contenido ── */}
-      {pestana === "vistas" ? (
+      {pestana === "listas" ? (
+        <Suspense fallback={<div className="skeleton" style={{ height:80, marginTop:"1rem" }}/>}>
+          <MisListas user={user} userId={perfil.id} propias={esMiPerfil} />
+        </Suspense>
+      ) : pestana === "vistas" ? (
         seriesVistas.length > 0 ? (
           <div style={{ display: "flex", gap: 9, flexWrap: "wrap", marginTop: "1rem" }}>
             {seriesVistas.map(s => (
