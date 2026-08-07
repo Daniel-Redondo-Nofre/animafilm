@@ -7,17 +7,12 @@ import {
 } from "../lib/social";
 import { slugify } from "../lib/slug";
 import { toast } from "../lib/toast.jsx";
-const MisListas = lazy(() => import("./Listas.jsx").then(m => ({ default: m.MisListas })));
-
-function Avatar({ username, size = 36 }) {
-  const COLORS = ["#7A0000", "#1A5A9A", "#3A8A4A", "#6030A0", "#C07010"];
-  const bg = COLORS[(username?.charCodeAt(0) || 0) % COLORS.length];
-  return (
-    <div className="avatar" style={{ width: size, height: size, background: bg, fontSize: size * 0.42 }}>
-      {(username?.[0] || "?").toUpperCase()}
-    </div>
-  );
-}
+import Avatar from "./Avatar.jsx";
+import { calcularInsignias } from "../lib/insignias";
+import { supabase } from "../lib/supabase";
+import { poster as posterTam } from "../lib/series";
+const MisListas    = lazy(() => import("./Listas.jsx").then(m => ({ default: m.MisListas })));
+const Personalizar = lazy(() => import("./Personalizar.jsx"));
 
 function Skeleton({ width = "100%", height = 20, style = {} }) {
   return <div className="skeleton" style={{ width, height, ...style }} />;
@@ -35,6 +30,8 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
   const [cargando, setCargando]   = useState(true);
   const [ocupado, setOcupado]     = useState(false);
   const [pestana, setPestana]     = useState("vistas");
+  const [porDecada, setPorDecada] = useState([]);
+  const [personalizando, setPers] = useState(false);
 
   const esMiPerfil = user?.profile?.username?.toLowerCase() === username?.toLowerCase();
 
@@ -52,13 +49,15 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
 
         document.title = `${p.display_name || p.username} — AnimaFilm`;
 
-        const [col, res] = await Promise.all([
+        const [col, res, dec] = await Promise.all([
           fetchColeccion(p.id),
           fetchResenasDe(p.id),
+          supabase.rpc("vistas_por_decada", { usuario: p.id }),
         ]);
         if (!vivo) return;
         setColeccion(col);
         setResenas(res);
+        setPorDecada(dec.data ?? []);
 
         if (user && user.id !== p.id) {
           const [sig, cmp] = await Promise.all([
@@ -132,11 +131,29 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
   const seriesVistas = series.filter(s => coleccion.vistas.includes(s.id));
   const getSerie = id => series.find(s => s.id === id);
 
+  // Las favoritas se guardan como ids: hay que mantener el orden elegido
+  // y descartar las que ya no existan en el catálogo.
+  const favoritas = (perfil.favoritas ?? [])
+    .map(id => series.find(s => s.id === id))
+    .filter(Boolean);
+
+  const portadaUrl = (() => {
+    const s2 = series.find(x => x.id === perfil.portada_serie);
+    return s2?.poster ? posterTam(s2.poster, "w342") : null;
+  })();
+
+  const insignias = calcularInsignias(perfil, porDecada);
+
   return (
     <div className="page-enter">
       {/* ── Cabecera ── */}
-      <div className="perfil-cabecera">
-        <Avatar username={perfil.username} size={84} />
+      <div className={`perfil-cabecera${portadaUrl ? " con-portada" : ""}`}>
+        {portadaUrl && (
+          <div className="perfil-portada" aria-hidden="true">
+            <img src={portadaUrl} alt="" />
+          </div>
+        )}
+        <Avatar perfil={perfil} size={84} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="font-display" style={{ fontSize: 32, color: "var(--accent)", lineHeight: 1.1 }}>
             {perfil.display_name || perfil.username}
@@ -152,9 +169,13 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
 
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
             {esMiPerfil ? (
-              <Link className="btn btn-secondary" to="/perfil" style={{ fontSize: 12, padding: "6px 14px" }}>
-                ✏️ Editar mi perfil
-              </Link>
+              <>
+                <button className="btn btn-secondary" style={{ fontSize: 12, padding: "6px 14px" }}
+                        onClick={() => setPers(true)}>🎨 Personalizar</button>
+                <Link className="btn btn-ghost" to="/perfil" style={{ fontSize: 12, padding: "6px 14px" }}>
+                  ✏️ Editar datos
+                </Link>
+              </>
             ) : (
               <button
                 className={siguiendo ? "btn btn-ghost" : "btn btn-primary"}
@@ -169,6 +190,42 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
           </div>
         </div>
       </div>
+
+      {/* ── Favoritas ── */}
+      {favoritas.length > 0 && (
+        <div className="favoritas animate-fadeUp">
+          <h2 className="font-display">⭐ Sus cuatro imprescindibles</h2>
+          <div className="favoritas-grid">
+            {favoritas.map(s2 => (
+              <Link key={s2.id} to={`/serie/${slugify(s2.titulo)}`} className="favorita"
+                    style={{ background: s2.color }}>
+                {s2.poster
+                  ? <img src={posterTam(s2.poster, "w185")} alt={s2.titulo} loading="lazy" />
+                  : <span className="font-display">{s2.titulo}</span>}
+                <span className="favorita-nombre">{s2.titulo}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Insignias ── */}
+      {insignias.length > 0 && (
+        <div className="insignias animate-fadeUp">
+          <h2 className="font-display">🏅 Insignias</h2>
+          <div className="insignias-grid">
+            {insignias.map(i => (
+              <div key={i.id} className={`insignia rango-${i.rango}`} title={i.desc}>
+                <span className="insignia-icono" aria-hidden="true">{i.icono}</span>
+                <span>
+                  <strong>{i.nombre}</strong>
+                  <em>{i.desc}</em>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Cifras ── */}
       <div className="perfil-cifras">
@@ -300,6 +357,17 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
             Todavía no ha escrito ninguna reseña.
           </p>
         )
+      )}
+
+      {personalizando && (
+        <Suspense fallback={null}>
+          <Personalizar
+            user={user}
+            series={series}
+            onClose={() => setPers(false)}
+            onSaved={() => fetchPerfilPublico(username).then(setPerfil)}
+          />
+        </Suspense>
       )}
     </div>
   );

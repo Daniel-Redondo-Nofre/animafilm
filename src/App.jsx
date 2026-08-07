@@ -7,6 +7,7 @@ import { slugify, findBySlug } from "./lib/slug";
 const EditarPerfil  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.EditarPerfil })));
 const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 import Portal from "./components/Portal.jsx";
+import Avatar from "./components/Avatar.jsx";
 import { fetchSeguidos, buscarUsuarios } from "./lib/social";
 const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
 const DetalleLista  = lazy(() => import("./components/Listas.jsx"));
@@ -54,12 +55,6 @@ function StarRating({ rating, onRate, size=18, readonly=false }) {
       ))}
     </div>
   );
-}
-
-function Avatar({ username, size=36 }) {
-  const COLORS=["#7A0000","#1A5A9A","#3A8A4A","#6030A0","#C07010"];
-  const bg=COLORS[(username?.charCodeAt(0)||0)%COLORS.length];
-  return <div className="avatar" style={{ width:size, height:size, background:bg, fontSize:size*0.42 }}>{(username?.[0]||"?").toUpperCase()}</div>;
 }
 
 function Skeleton({ width="100%", height=20, style={} }) {
@@ -159,7 +154,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   useEffect(()=>{
     (async()=>{
       setLoadingR(true);
-      const {data}=await supabase.from("reviews").select("*,profiles(username,display_name)").eq("serie_id",serie.id).order("created_at",{ascending:false});
+      const {data}=await supabase.from("reviews").select("*,profiles(username,display_name,avatar_emoji,avatar_color)").eq("serie_id",serie.id).order("created_at",{ascending:false});
       setReviews(data||[]);
       if(user) setMyReview((data||[]).find(r=>r.user_id===user.id)?.content||"");
       setLoadingR(false);
@@ -172,7 +167,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   const [mostrarListas, setMostrarListas] = useState(false);
 
   async function recargarReseñas(){
-    const {data}=await supabase.from("reviews").select("*,profiles(username,display_name)").eq("serie_id",serie.id).order("created_at",{ascending:false});
+    const {data}=await supabase.from("reviews").select("*,profiles(username,display_name,avatar_emoji,avatar_color)").eq("serie_id",serie.id).order("created_at",{ascending:false});
     setReviews(data||[]);
   }
 
@@ -278,7 +273,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             <div className="review-card" style={{ marginBottom:"1rem" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
                 <Link to={`/u/${user.profile?.username}`} aria-label="Ver mi perfil">
-                  <Avatar username={user.profile?.username} size={30}/>
+                  <Avatar perfil={user.profile} size={30}/>
                 </Link>
                 <Link to={`/u/${user.profile?.username}`} className="enlace-usuario">
                   <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{user.profile?.display_name||user.profile?.username}</span>
@@ -314,7 +309,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             :reviews.filter(r=>r.user_id!==user?.id).map(r=>(
               <div key={r.id} className="review-card animate-fadeUp" style={{ marginBottom:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  <Link to={`/u/${r.profiles?.username}`} aria-label={`Ver perfil de ${r.profiles?.username}`}><Avatar username={r.profiles?.username} size={28}/></Link>
+                  <Link to={`/u/${r.profiles?.username}`} aria-label={`Ver perfil de ${r.profiles?.username}`}><Avatar perfil={r.profiles} size={28}/></Link>
                   <Link to={`/u/${r.profiles?.username}`} className="enlace-usuario">
                     <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{r.profiles?.display_name||r.profiles?.username}</span>
                   </Link>
@@ -370,9 +365,9 @@ function Feed({ user, onShowAuth, series }) {
         ambito==="siguiendo" ? q.in("user_id", seguidos.length ? seguidos : ["00000000-0000-0000-0000-000000000000"]) : q;
 
       const [{ data:r },{ data:w },{ data:rev }]=await Promise.all([
-        filtrar(supabase.from("ratings").select("*,profiles(username,display_name)")).order("created_at",{ascending:false}).limit(40),
-        filtrar(supabase.from("watched").select("*,profiles(username,display_name)")).order("watched_at",{ascending:false}).limit(40),
-        filtrar(supabase.from("reviews").select("*,profiles(username,display_name)")).order("created_at",{ascending:false}).limit(40),
+        filtrar(supabase.from("ratings").select("*,profiles(username,display_name,avatar_emoji,avatar_color)")).order("created_at",{ascending:false}).limit(40),
+        filtrar(supabase.from("watched").select("*,profiles(username,display_name,avatar_emoji,avatar_color)")).order("watched_at",{ascending:false}).limit(40),
+        filtrar(supabase.from("reviews").select("*,profiles(username,display_name,avatar_emoji,avatar_color)")).order("created_at",{ascending:false}).limit(40),
       ]);
       const all=[
         ...(r||[]).map(x=>({type:"rating",date:x.created_at,...x})),
@@ -406,7 +401,7 @@ function Feed({ user, onShowAuth, series }) {
             {hallados.map(u=>(
               <Link key={u.id} to={`/u/${u.username}`} className="resultado-usuario"
                     onClick={()=>{ setBusca(""); setHallados([]); }}>
-                <Avatar username={u.username} size={32}/>
+                <Avatar perfil={u} size={32}/>
                 <div style={{ flex:1, minWidth:0 }}>
                   <strong>{u.display_name || u.username}</strong>
                   <span>@{u.username} · {u.vistas} vistas</span>
@@ -438,7 +433,7 @@ function Feed({ user, onShowAuth, series }) {
             return (
               <div key={i} className="feed-item animate-fadeUp" style={{ marginBottom:10, animationDelay:`${Math.min(i*40,300)}ms` }}>
                 <Link to={`/u/${item.profiles?.username}`} aria-label={`Ver perfil de ${name}`}>
-                  <Avatar username={item.profiles?.username} size={38}/>
+                  <Avatar perfil={item.profiles} size={38}/>
                 </Link>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, color:"var(--text)", lineHeight:1.6 }}>
@@ -502,7 +497,7 @@ function MiPerfil({ user, onShowAuth, series, onProfileUpdate }) {
   return (
     <div className="page-enter">
       <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:"2rem", background:"var(--bg-card)", border:"1.5px solid var(--border)", borderRadius:"var(--radius)", padding:"1.5rem" }}>
-        <Avatar username={user.profile?.username} size={64}/>
+        <Avatar perfil={user.profile} size={64}/>
         <div>
           <p className="font-display" style={{ fontSize:28, color:"var(--accent)" }}>{user.profile?.display_name||user.profile?.username}</p>
           <p style={{ fontSize:13, color:"var(--text-muted)" }}>@{user.profile?.username} · desde {new Date(user.created_at).getFullYear()}</p>
