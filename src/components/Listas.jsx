@@ -375,7 +375,7 @@ export default function DetalleLista({ user, series }) {
                 </div>
               </Link>
 
-              <div className="card-body" style={{ paddingBottom: 12 }}>
+              <div className="card-body">
                 <h3 className="card-title truncate">
                   <Link to={`/serie/${slugify(s.titulo)}`}>{s.titulo}</Link>
                 </h3>
@@ -383,7 +383,7 @@ export default function DetalleLista({ user, series }) {
                   <span>{s.cadena} · {s.episodios} ep.</span>
                 </div>
                 {esMia && (
-                  <button className="btn btn-ghost"
+                  <button className="btn btn-ghost quitar-serie"
                           style={{ width: "100%", padding: "5px 0", fontSize: 11, borderRadius: 8 }}
                           onClick={() => quitar(s.id)}
                           aria-label={`Quitar ${s.titulo} de la lista`}>

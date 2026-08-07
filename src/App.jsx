@@ -277,8 +277,12 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
           {user?(
             <div className="review-card" style={{ marginBottom:"1rem" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <Avatar username={user.profile?.username} size={30}/>
-                <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{user.profile?.display_name||user.profile?.username}</span>
+                <Link to={`/u/${user.profile?.username}`} aria-label="Ver mi perfil">
+                  <Avatar username={user.profile?.username} size={30}/>
+                </Link>
+                <Link to={`/u/${user.profile?.username}`} className="enlace-usuario">
+                  <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{user.profile?.display_name||user.profile?.username}</span>
+                </Link>
                 <span style={{ fontSize:11, color:"var(--text-faint)" }}>· tu reseña</span>
               </div>
               {editing||!hasMyReview?(
@@ -310,8 +314,8 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             :reviews.filter(r=>r.user_id!==user?.id).map(r=>(
               <div key={r.id} className="review-card animate-fadeUp" style={{ marginBottom:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  <Link to={`/u/${r.profiles?.username}`} onClick={onClose} aria-label={`Ver perfil de ${r.profiles?.username}`}><Avatar username={r.profiles?.username} size={28}/></Link>
-                  <Link to={`/u/${r.profiles?.username}`} className="enlace-usuario" onClick={onClose}>
+                  <Link to={`/u/${r.profiles?.username}`} aria-label={`Ver perfil de ${r.profiles?.username}`}><Avatar username={r.profiles?.username} size={28}/></Link>
+                  <Link to={`/u/${r.profiles?.username}`} className="enlace-usuario">
                     <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{r.profiles?.display_name||r.profiles?.username}</span>
                   </Link>
                   <span style={{ fontSize:11, color:"var(--text-faint)" }}>{new Date(r.created_at).toLocaleDateString("es-ES")}</span>

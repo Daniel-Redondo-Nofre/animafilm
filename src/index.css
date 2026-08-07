@@ -1421,3 +1421,7 @@ body > * { position: relative; z-index: 1; }
 }
 .volver:active { transform: translate(2px,2px); box-shadow: none; }
 .volver span { font-size: 17px; line-height: 1; }
+
+/* El botón de quitar necesita separarse del doblez de la esquina */
+.quitar-serie { margin-top: 4px; }
+.card-body .card-meta:last-of-type { margin-bottom: 6px; }
