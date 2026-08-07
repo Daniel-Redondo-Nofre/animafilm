@@ -132,8 +132,13 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   async function compartir() {
     const url   = `${window.location.origin}/serie/${slugify(serie.titulo)}`;
     const texto = `${serie.titulo} (${serie.año}) en AnimaFilm`;
+    // El menú nativo de compartir existe también en Windows, pero ahí
+    // interrumpe más de lo que ayuda: en escritorio se espera que un
+    // botón de compartir copie el enlace. Lo reservamos para táctiles.
+    const esTactil = window.matchMedia("(pointer: coarse)").matches;
+
     try {
-      if (navigator.share) {
+      if (esTactil && navigator.share) {
         await navigator.share({ title: texto, text: texto, url });
         return;
       }
@@ -305,7 +310,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             :reviews.filter(r=>r.user_id!==user?.id).map(r=>(
               <div key={r.id} className="review-card animate-fadeUp" style={{ marginBottom:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  <Link to={`/u/${r.profiles?.username}`}><Avatar username={r.profiles?.username} size={28}/></Link>
+                  <Link to={`/u/${r.profiles?.username}`} onClick={onClose} aria-label={`Ver perfil de ${r.profiles?.username}`}><Avatar username={r.profiles?.username} size={28}/></Link>
                   <Link to={`/u/${r.profiles?.username}`} className="enlace-usuario" onClick={onClose}>
                     <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{r.profiles?.display_name||r.profiles?.username}</span>
                   </Link>
@@ -428,13 +433,15 @@ function Feed({ user, onShowAuth, series }) {
             const name=item.profiles?.display_name||item.profiles?.username||"Alguien";
             return (
               <div key={i} className="feed-item animate-fadeUp" style={{ marginBottom:10, animationDelay:`${Math.min(i*40,300)}ms` }}>
-                <Avatar username={item.profiles?.username} size={38}/>
+                <Link to={`/u/${item.profiles?.username}`} aria-label={`Ver perfil de ${name}`}>
+                  <Avatar username={item.profiles?.username} size={38}/>
+                </Link>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, color:"var(--text)", lineHeight:1.6 }}>
-                    <strong>{name}</strong>{" "}
-                    {item.type==="rating"&&<>ha puntuado <strong>{serie.titulo}</strong> con {"⭐".repeat(item.rating)}</>}
-                    {item.type==="watch"&&<>ha marcado <strong>{serie.titulo}</strong> como vista ✅</>}
-                    {item.type==="review"&&<>ha reseñado <strong>{serie.titulo}</strong>: <em style={{ color:"var(--text-muted)" }}>"{item.content?.slice(0,90)}{item.content?.length>90?"…":""}"</em></>}
+                    <Link to={`/u/${item.profiles?.username}`} className="enlace-usuario"><strong>{name}</strong></Link>{" "}
+                    {item.type==="rating"&&<>ha puntuado <Link to={`/serie/${slugify(serie.titulo)}`} className="enlace-usuario"><strong>{serie.titulo}</strong></Link> con {"⭐".repeat(item.rating)}</>}
+                    {item.type==="watch"&&<>ha marcado <Link to={`/serie/${slugify(serie.titulo)}`} className="enlace-usuario"><strong>{serie.titulo}</strong></Link> como vista ✅</>}
+                    {item.type==="review"&&<>ha reseñado <Link to={`/serie/${slugify(serie.titulo)}`} className="enlace-usuario"><strong>{serie.titulo}</strong></Link>: <em style={{ color:"var(--text-muted)" }}>"{item.content?.slice(0,90)}{item.content?.length>90?"…":""}"</em></>}
                   </div>
                   <div style={{ fontSize:11, color:"var(--text-faint)", marginTop:3 }}>
                     {new Date(item.date).toLocaleDateString("es-ES",{day:"numeric",month:"short"})}

@@ -8,6 +8,7 @@ import {
   actualizarLista, borrarLista, anadirSerie, quitarSerie, listasConSerie,
 } from "../lib/listas";
 import { slugify } from "../lib/slug";
+import { poster as posterTam } from "../lib/series";
 import { useModal } from "../lib/useModal";
 import { toast } from "../lib/toast.jsx";
 import Portal from "./Portal.jsx";
@@ -299,6 +300,13 @@ export default function DetalleLista({ user, series }) {
 
   return (
     <div className="page-enter">
+      {/* Volver: usa el historial si venimos de dentro; si se entró por
+          enlace directo, lleva al catálogo. */}
+      <button className="volver"
+              onClick={()=> window.history.length > 2 ? navigate(-1) : navigate("/")}>
+        <span aria-hidden="true">←</span> Volver
+      </button>
+
       <div className="lista-cabecera">
         {editando ? (
           <div style={{ flex: 1 }}>
@@ -350,20 +358,40 @@ export default function DetalleLista({ user, series }) {
           Esta lista está vacía. Abre una serie y usa <strong>📋 Añadir a lista</strong>.
         </p>
       ) : (
-        <div style={{ display: "flex", gap: 9, flexWrap: "wrap", marginTop: "1.4rem" }}>
-          {contenido.map(s => (
-            <span key={s.id} className="serie-pill" style={{ background: s.color }}>
-              <Link to={`/serie/${slugify(s.titulo)}`} style={{ color: "#fff", textDecoration: "none" }}>
-                {s.titulo}
+        <div className="series-grid" style={{ marginTop: "1.5rem" }}>
+          {contenido.map((s, i) => (
+            <article key={s.id} className="card animate-fadeUp"
+                     style={{ animationDelay: `${Math.min(i * 30, 400)}ms` }}>
+              <Link to={`/serie/${slugify(s.titulo)}`} className="card-poster-link"
+                    tabIndex={-1} aria-hidden="true">
+                <div className="card-poster" style={{ background: s.color }}>
+                  {s.poster
+                    ? <img src={posterTam(s.poster, "w185")} alt="" width="185" height="278"
+                           loading={i < 6 ? "eager" : "lazy"} decoding="async" />
+                    : <div className="card-poster-fallback">
+                        <span className="font-display">{s.titulo}</span>
+                      </div>}
+                  <span className="poster-badge">{s.decada} · {s.año}</span>
+                </div>
               </Link>
-              {esMia && (
-                <button onClick={() => quitar(s.id)} aria-label={`Quitar ${s.titulo} de la lista`}
-                        style={{ background: "rgba(0,0,0,.3)", border: "none", color: "#fff",
-                                 borderRadius: 8, cursor: "pointer", fontSize: 11, padding: "0 5px", marginLeft: 2 }}>
-                  ✕
-                </button>
-              )}
-            </span>
+
+              <div className="card-body" style={{ paddingBottom: 12 }}>
+                <h3 className="card-title truncate">
+                  <Link to={`/serie/${slugify(s.titulo)}`}>{s.titulo}</Link>
+                </h3>
+                <div className="card-meta">
+                  <span>{s.cadena} · {s.episodios} ep.</span>
+                </div>
+                {esMia && (
+                  <button className="btn btn-ghost"
+                          style={{ width: "100%", padding: "5px 0", fontSize: 11, borderRadius: 8 }}
+                          onClick={() => quitar(s.id)}
+                          aria-label={`Quitar ${s.titulo} de la lista`}>
+                    ✕ Quitar
+                  </button>
+                )}
+              </div>
+            </article>
           ))}
         </div>
       )}

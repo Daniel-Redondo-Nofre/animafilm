@@ -1395,3 +1395,29 @@ body > * { position: relative; z-index: 1; }
   .rankings-grid  { grid-template-columns: 1fr; }
   .lista-cabecera { flex-direction: column; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BOTÓN DE VOLVER
+   ═══════════════════════════════════════════════════════════════════════ */
+.volver {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 15px 6px 12px;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 14px; letter-spacing: .05em;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  text-decoration: none;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), color var(--t-fast);
+}
+.volver:hover {
+  transform: translateX(-3px);
+  box-shadow: var(--sh-btn);
+  color: var(--accent);
+}
+.volver:active { transform: translate(2px,2px); box-shadow: none; }
+.volver span { font-size: 17px; line-height: 1; }
