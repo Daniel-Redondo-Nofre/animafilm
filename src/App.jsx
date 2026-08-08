@@ -8,6 +8,7 @@ const EditarPerfil  = lazy(() => import("./components/GestionCuenta.jsx").then(m
 const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 import Portal from "./components/Portal.jsx";
 import Avatar from "./components/Avatar.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { fetchSeguidos, buscarUsuarios } from "./lib/social";
 const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
 const DetalleLista  = lazy(() => import("./components/Listas.jsx"));
@@ -936,7 +937,8 @@ export default function App() {
       </nav>
 
       <main id="contenido" className="contenido">
-        <Suspense fallback={null}>
+        <ErrorBoundary>
+        <Suspense fallback={<div className="skeleton" style={{ height:240 }}/>}>
         <Routes>
           <Route path="/"             element={catalogo} />
           <Route path="/serie/:slug"  element={catalogo} />
@@ -948,6 +950,7 @@ export default function App() {
           <Route path="*"             element={<NoEncontrado/>} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
 
       {slugActivo && catalogLoaded && !serieActiva && (
