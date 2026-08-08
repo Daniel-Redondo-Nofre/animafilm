@@ -102,7 +102,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
   // ── Cargando ────────────────────────────────────────────────────────
   if (cargando) return (
     <div className="page-enter">
-      <div className="perfil-cabecera">
+      <div className="perfil-ficha">
         <Skeleton width={84} height={84} style={{ borderRadius: "50%" }} />
         <div style={{ flex: 1 }}>
           <Skeleton height={30} width="45%" style={{ marginBottom: 8 }} />
@@ -166,57 +166,60 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
       )}
 
       {/* ── Cabecera ── */}
-      <div className="perfil-hero" style={{ "--tinte": portadaColor }}>
+      <header className="perfil-hero" style={{ "--tinte": portadaColor }}>
         {portadaUrl && <div className="perfil-banda" aria-hidden="true" />}
 
-        <div className={`perfil-cabecera${portadaUrl ? " bajo-banner" : ""}`}>
-        <Avatar perfil={perfil} size={84} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 className="font-display" style={{ fontSize: 32, color: "var(--accent)", lineHeight: 1.1 }}>
-            {perfil.display_name || perfil.username}
-          </h1>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>
-            @{perfil.username} · desde {new Date(perfil.created_at).getFullYear()}
-          </p>
-          {perfil.bio && (
-            <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 700, marginTop: 8, lineHeight: 1.6, maxWidth: 520 }}>
-              {perfil.bio}
-            </p>
-          )}
+        <div className={`perfil-ficha${portadaUrl ? " con-banda" : ""}`}>
+          {/* Columna izquierda: quién es */}
+          <div className="perfil-identidad">
+            <Avatar perfil={perfil} size={84} />
 
-          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-            {esMiPerfil ? (
-              <>
-                <button className="btn btn-secondary" style={{ fontSize: 12, padding: "6px 14px" }}
-                        onClick={() => setPers(true)}>🎨 Personalizar</button>
-                <button className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 14px" }}
-                        onClick={() => setGestion("editar")}>✏️ Editar datos</button>
-                <button className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 14px" }}
-                        onClick={() => setGestion("cuenta")}>⚙️ Mi cuenta</button>
-              </>
-            ) : (
-              <button
-                className={siguiendo ? "btn btn-ghost" : "btn btn-primary"}
-                style={{ fontSize: 13, padding: "7px 18px" }}
-                onClick={alternarSeguir}
-                disabled={ocupado}
-                aria-pressed={siguiendo}
-              >
-                {siguiendo ? "✓ Siguiendo" : "+ Seguir"}
-              </button>
-            )}
+            <div className="perfil-datos">
+              <h1 className="perfil-nombre font-display">
+                {perfil.display_name || perfil.username}
+              </h1>
+              <p className="perfil-arroba">
+                @{perfil.username} · desde {new Date(perfil.created_at).getFullYear()}
+              </p>
+              {perfil.bio && <p className="perfil-bio">{perfil.bio}</p>}
+
+              <div className="perfil-acciones">
+                {esMiPerfil ? (
+                  <>
+                    <button className="btn btn-secondary" onClick={() => setPers(true)}>
+                      🎨 Personalizar
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => setGestion("editar")}>
+                      ✏️ Editar datos
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => setGestion("cuenta")}>
+                      ⚙️ Mi cuenta
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className={siguiendo ? "btn btn-ghost" : "btn btn-primary"}
+                    onClick={alternarSeguir}
+                    disabled={ocupado}
+                    aria-pressed={siguiendo}
+                  >
+                    {siguiendo ? "✓ Siguiendo" : "+ Seguir"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
+          {/* Columna derecha: la serie destacada, aparte del texto */}
           {portadaUrl && seriePortada && (
-            <Link to={`/serie/${slugify(seriePortada.titulo)}`} className="perfil-poster"
+            <Link to={`/serie/${slugify(seriePortada.titulo)}`} className="perfil-destacada"
                   title={`Serie destacada: ${portadaTitulo}`}>
               <img src={portadaUrl} alt={portadaTitulo} />
               <span>{portadaTitulo}</span>
             </Link>
           )}
         </div>
-        </div>
-      </div>
+      </header>
 
       {/* ── Favoritas ── */}
       {favoritas.length > 0 && (
