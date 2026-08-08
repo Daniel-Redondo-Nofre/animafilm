@@ -1761,94 +1761,84 @@ body > * { position: relative; z-index: 1; }
 
 
 
-/* ═══════════════════════════════════════════════════════════════════════
-   FONDO DE PÁGINA DEL PERFIL
-   Repetir el póster a todo color queda repetitivo y barato. Pasado a
-   monocromo y teñido con el color de la serie, deja de leerse como
-   "la misma foto muchas veces" y se lee como papel pintado.
-   ═══════════════════════════════════════════════════════════════════════ */
-.perfil-fondo {
-  position: fixed; inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-  background: var(--bg);
-}
-.fondo-tapiz {
-  position: absolute; inset: -20px;
-  background-repeat: repeat;
-  background-position: center top;
-  /* Monocromo y de bajo contraste: textura, no galería de imágenes */
-  filter: grayscale(1) contrast(.45) brightness(1.35);
-}
-/* Tinte del color de la serie + fondo del tema, para que el texto
-   siga legible sea cual sea el póster. */
-.perfil-fondo::after {
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(165deg,
-      color-mix(in srgb, var(--tinte) 42%, transparent) 0%,
-      color-mix(in srgb, var(--tinte) 12%, transparent) 55%,
-      transparent 100%),
-    var(--bg);
-  mix-blend-mode: normal;
-}
 
-.perfil-fondo.intensidad-1 .fondo-tapiz { background-size: 62px auto; opacity: .5; }
-.perfil-fondo.intensidad-2 .fondo-tapiz { background-size: 88px auto; opacity: .7; }
-.perfil-fondo.intensidad-3 .fondo-tapiz { background-size: 124px auto; opacity: .9; }
-
-.perfil-fondo.intensidad-1::after { opacity: .90; }
-.perfil-fondo.intensidad-2::after { opacity: .85; }
-.perfil-fondo.intensidad-3::after { opacity: .78; }
-
-[data-theme="dark"] .fondo-tapiz { filter: grayscale(1) contrast(.4) brightness(.5); }
-[data-theme="dark"] .perfil-fondo.intensidad-1::after { opacity: .92; }
-[data-theme="dark"] .perfil-fondo.intensidad-2::after { opacity: .88; }
-[data-theme="dark"] .perfil-fondo.intensidad-3::after { opacity: .82; }
-
-.pers-intensidad { display: flex; gap: 6px; flex-wrap: wrap; }
-.pers-serie-tebeo {
-  background-color: var(--bg);
-  background-image: radial-gradient(circle, var(--dots) 1.5px, transparent 1.5px);
-  background-size: 9px 9px;
-}
-
-@media (max-width: 620px) {
-}
-@media (max-width: 400px) {
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
    CABECERA DEL PERFIL
-   Dos columnas: identidad a la izquierda, serie destacada a la derecha.
-   La banda superior es color plano derivado de la serie — un póster 2:3
-   no funciona como franja apaisada, ni recortado ni desenfocado.
+   La banda ya no está vacía: lleva la cartela de la serie destacada, y
+   el póster se ancla en posición absoluta sobre ella, nítido y a su
+   proporción. Así la franja tiene un motivo para existir.
    ═══════════════════════════════════════════════════════════════════════ */
-.perfil-hero { margin-bottom: 1.3rem; }
+.perfil-hero {
+  position: relative;
+  margin-bottom: 1.3rem;
+}
 
 .perfil-banda {
-  height: 68px;
+  height: 116px;
   border: var(--border-w) solid var(--border);
   border-bottom: none;
   border-radius: var(--radius) var(--radius) 0 0;
+  padding: 1rem 1.3rem;
+  display: flex; align-items: flex-start;
   background-color: var(--tinte, var(--accent));
   background-image:
-    radial-gradient(circle, rgba(0,0,0,.20) 1.5px, transparent 1.5px),
-    repeating-linear-gradient(115deg, rgba(255,255,255,.08) 0 14px, transparent 14px 34px),
+    radial-gradient(circle, rgba(0,0,0,.22) 1.5px, transparent 1.5px),
     linear-gradient(105deg,
-      color-mix(in srgb, #000 24%, var(--tinte, var(--accent))) 0%,
-      var(--tinte, var(--accent)) 60%,
-      color-mix(in srgb, #fff 14%, var(--tinte, var(--accent))) 100%);
-  background-size: 8px 8px, auto, auto;
+      color-mix(in srgb, #000 30%, var(--tinte, var(--accent))) 0%,
+      var(--tinte, var(--accent)) 65%,
+      color-mix(in srgb, #fff 12%, var(--tinte, var(--accent))) 100%);
+  background-size: 8px 8px, auto;
 }
 
+.banda-texto {
+  /* Reserva sitio para el póster, que va anclado a la derecha */
+  padding-right: 130px;
+  max-width: 100%;
+}
+.banda-texto span {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 12px; letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.72);
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.banda-texto strong {
+  display: block;
+  margin-top: 2px;
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.08;
+  color: #fff;
+  /* Contorno de tinta: el título se lee sobre cualquier color de serie */
+  text-shadow:
+     2px 0 0 rgba(0,0,0,.55), -2px 0 0 rgba(0,0,0,.55),
+     0 2px 0 rgba(0,0,0,.55),  0 -2px 0 rgba(0,0,0,.55),
+     3px 3px 0 rgba(0,0,0,.35);
+}
+
+/* ── Póster anclado: sobrevuela banda y ficha ── */
+.perfil-destacada {
+  position: absolute;
+  top: 20px; right: 22px;
+  width: 104px;
+  z-index: 4;
+  text-decoration: none;
+}
+.perfil-destacada img {
+  display: block; width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 4px 4px 0 var(--border), 0 8px 24px rgba(0,0,0,.35);
+  transition: transform var(--t-spring);
+}
+.perfil-destacada:hover img { transform: translate(-2px,-4px) rotate(-1deg); }
+
+/* ── Ficha ── */
 .perfil-ficha {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  display: flex; align-items: flex-start; gap: 18px;
   background: var(--bg-card);
   border: var(--border-w) solid var(--border);
   border-radius: var(--radius);
@@ -1858,95 +1848,36 @@ body > * { position: relative; z-index: 1; }
 .perfil-ficha.con-banda {
   border-top: none;
   border-radius: 0 0 var(--radius) var(--radius);
-  padding-top: 0;
+  /* Hueco a la derecha para el póster anclado */
+  padding: 1.1rem 148px 1.4rem 1.5rem;
 }
-
-/* ── Identidad ── */
-.perfil-identidad {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.perfil-ficha.con-banda .avatar {
-  position: relative;
-  z-index: 3;
-  margin-top: -42px;
-  flex-shrink: 0;
-  border-width: 4px;
-  box-shadow: 3px 3px 0 var(--border), 0 5px 20px rgba(0,0,0,.35);
-}
-.perfil-datos { flex: 1 1 auto; min-width: 0; padding-top: .9rem; }
-.perfil-ficha:not(.con-banda) .perfil-datos { padding-top: 0; }
+.perfil-identidad { display: flex; align-items: flex-start; gap: 16px; flex: 1 1 auto; min-width: 0; }
+.perfil-ficha .avatar { flex-shrink: 0; }
+.perfil-datos { flex: 1 1 auto; min-width: 0; }
 
 .perfil-nombre {
-  font-size: clamp(24px, 3.4vw, 32px);
+  font-size: clamp(23px, 3.2vw, 31px);
   color: var(--accent);
   line-height: 1.08;
   word-break: break-word;
 }
-.perfil-arroba {
-  font-size: 13px; color: var(--text-muted); font-weight: 700;
-  margin-top: 3px;
-}
-.perfil-bio {
-  font-size: 14px; color: var(--text-muted); font-weight: 700;
-  margin-top: 9px; line-height: 1.6; max-width: 520px;
-}
-.perfil-acciones {
-  display: flex; gap: 8px; flex-wrap: wrap;
-  margin-top: 13px;
-}
+.perfil-arroba { font-size: 13px; color: var(--text-muted); font-weight: 700; margin-top: 3px; }
+.perfil-bio    { font-size: 14px; color: var(--text-muted); font-weight: 700; margin-top: 9px; line-height: 1.6; max-width: 520px; }
+.perfil-acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 13px; }
 .perfil-acciones .btn { font-size: 12px; padding: 6px 14px; }
-
-/* ── Serie destacada ── */
-.perfil-destacada {
-  flex: 0 0 88px;
-  width: 88px;
-  margin-top: -46px;
-  position: relative;
-  z-index: 3;
-  text-decoration: none;
-  display: block;
-}
-.perfil-destacada img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  object-fit: cover;
-  border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--sh-card);
-  transition: transform var(--t-spring), box-shadow var(--t-spring);
-}
-.perfil-destacada:hover img {
-  transform: translate(-2px,-3px);
-  box-shadow: var(--sh-card-hover);
-}
-.perfil-destacada span {
-  display: block;
-  margin-top: 5px;
-  font-size: 10px; font-weight: 800;
-  color: var(--text-muted);
-  text-align: center; line-height: 1.3;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
 
 /* ── Cifras ── */
 .perfil-cifras {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 10px;
-  margin-bottom: 1.5rem;
+  gap: 10px; margin-bottom: 1.5rem;
 }
 .perfil-cifra {
   background: var(--bg-card);
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--sh-sm);
-  padding: 12px 8px;
-  text-align: center;
+  padding: 12px 8px; text-align: center;
   display: flex; flex-direction: column; gap: 2px;
   transition: transform var(--t-fast), box-shadow var(--t-fast);
 }
@@ -1954,18 +1885,82 @@ body > * { position: relative; z-index: 1; }
 .perfil-cifra span:first-child { font-size: 26px; color: var(--accent); line-height: 1; }
 .perfil-cifra span:last-child  { font-size: 11px; color: var(--text-muted); font-weight: 800; }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   FONDO DE PÁGINA DEL PERFIL
+   Un mosaico repetido solo asomaba por las rendijas entre tarjetas y
+   parecía un error. Ahora es UNA imagen grande y fija, y las tarjetas se
+   vuelven translúcidas con desenfoque detrás: así el fondo se lee como
+   una superficie continua en lugar de trozos cortados.
+   ═══════════════════════════════════════════════════════════════════════ */
+.perfil-fondo {
+  position: fixed; inset: 0;
+  z-index: -1; pointer-events: none;
+  background: var(--bg);
+  overflow: hidden;
+}
+.perfil-fondo img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 30%;
+  transform: scale(1.15);
+}
+.perfil-fondo::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(170deg,
+      color-mix(in srgb, var(--tinte) 45%, transparent) 0%,
+      transparent 70%),
+    var(--bg);
+}
+.perfil-fondo.intensidad-1 img { filter: blur(26px) saturate(1.2); }
+.perfil-fondo.intensidad-2 img { filter: blur(16px) saturate(1.3); }
+.perfil-fondo.intensidad-3 img { filter: blur(8px)  saturate(1.35); }
+
+.perfil-fondo.intensidad-1::after { opacity: .90; }
+.perfil-fondo.intensidad-2::after { opacity: .82; }
+.perfil-fondo.intensidad-3::after { opacity: .70; }
+
+[data-theme="dark"] .perfil-fondo.intensidad-1::after { opacity: .92; }
+[data-theme="dark"] .perfil-fondo.intensidad-2::after { opacity: .86; }
+[data-theme="dark"] .perfil-fondo.intensidad-3::after { opacity: .76; }
+
+/* Cristal: las tarjetas dejan ver el fondo. Es lo que convierte la
+   imagen en fondo de verdad y no en relleno de las rendijas. */
+.con-fondo .perfil-ficha,
+.con-fondo .perfil-cifra,
+.con-fondo .ranking,
+.con-fondo .review-card,
+.con-fondo .insignia,
+.con-fondo .lista-card,
+.con-fondo .comparacion,
+.con-fondo .sort-btn {
+  background-color: color-mix(in srgb, var(--bg-card) 80%, transparent);
+  backdrop-filter: blur(12px) saturate(1.15);
+}
+.con-fondo .sort-btn.active {
+  background-color: color-mix(in srgb, var(--accent) 92%, transparent);
+}
+
+.pers-intensidad { display: flex; gap: 6px; flex-wrap: wrap; }
+.pers-serie-tebeo {
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, var(--dots) 1.5px, transparent 1.5px);
+  background-size: 9px 9px;
+}
+
 @media (max-width: 620px) {
-  .perfil-banda { height: 54px; }
+  .perfil-banda { height: 96px; padding: .8rem 1rem; }
+  .banda-texto  { padding-right: 88px; }
+  .banda-texto span { font-size: 10px; letter-spacing: .12em; }
+  .perfil-destacada { top: 14px; right: 12px; width: 70px; }
   .perfil-ficha { padding: 1.1rem 1rem; gap: 12px; }
-  .perfil-ficha.con-banda .avatar { margin-top: -34px; }
+  .perfil-ficha.con-banda { padding: 1rem 92px 1.2rem 1rem; }
   .perfil-identidad { gap: 12px; }
-  .perfil-datos { padding-top: .7rem; }
-  .perfil-destacada { flex: 0 0 60px; width: 60px; margin-top: -34px; }
-  .perfil-destacada span { display: none; }
   .perfil-cifras { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .perfil-cifra span:first-child { font-size: 21px; }
 }
 @media (max-width: 400px) {
-  .perfil-destacada { display: none; }
+  .perfil-destacada { width: 58px; }
+  .perfil-ficha.con-banda { padding-right: 76px; }
   .perfil-cifras { grid-template-columns: repeat(2, 1fr); }
 }

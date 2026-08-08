@@ -147,13 +147,14 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
 
   const serieFondo = series.find(x => x.id === perfil.fondo_serie);
   // w185: el fondo se repite en mosaico, no hace falta más resolución
-  const fondoUrl   = serieFondo?.poster ? posterTam(serieFondo.poster, "w185") : null;
+  // Imagen grande: ahora es un fondo único, no un mosaico
+  const fondoUrl   = serieFondo?.poster ? posterTam(serieFondo.poster, "w500") : null;
   const fondoColor = serieFondo?.color  || "#C01200";
 
   const insignias = calcularInsignias(perfil, porDecada);
 
   return (
-    <div className="page-enter">
+    <div className={`page-enter${fondoUrl ? " con-fondo" : ""}`}>
       {/* ── Fondo de página, si lo ha elegido ── */}
       {fondoUrl && (
         <div
@@ -161,13 +162,20 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
           aria-hidden="true"
           style={{ "--tinte": fondoColor }}
         >
-          <div className="fondo-tapiz" style={{ backgroundImage: `url(${fondoUrl})` }} />
+          <img src={fondoUrl} alt="" />
         </div>
       )}
 
       {/* ── Cabecera ── */}
       <header className="perfil-hero" style={{ "--tinte": portadaColor }}>
-        {portadaUrl && <div className="perfil-banda" aria-hidden="true" />}
+        {portadaUrl && (
+          <div className="perfil-banda">
+            <div className="banda-texto">
+              <span>Serie destacada</span>
+              <strong className="font-display">{portadaTitulo}</strong>
+            </div>
+          </div>
+        )}
 
         <div className={`perfil-ficha${portadaUrl ? " con-banda" : ""}`}>
           {/* Columna izquierda: quién es */}
