@@ -1,5 +1,5 @@
 // src/components/Personalizar.jsx
-// Elegir avatar, series favoritas y portada del perfil.
+// Elegir avatar y series favoritas del perfil.
 
 import { useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
@@ -16,9 +16,6 @@ export default function Personalizar({ user, series, onClose, onSaved }) {
   const [emoji, setEmoji]   = useState(p.avatar_emoji || "");
   const [color, setColor]   = useState(p.avatar_color || colorPorNombre(p.username || ""));
   const [favs, setFavs]     = useState(Array.isArray(p.favoritas) ? p.favoritas : []);
-  const [portada, setPort]  = useState(p.portada_serie ?? null);
-  const [fondo, setFondo]   = useState(p.fondo_serie ?? null);
-  const [intens, setIntens] = useState(p.fondo_intensidad ?? 2);
   const [pestana, setPest]  = useState("avatar");
   const [busca, setBusca]   = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -48,9 +45,6 @@ export default function Personalizar({ user, series, onClose, onSaved }) {
         avatar_emoji: emoji || null,
         avatar_color: color || null,
         favoritas: favs,
-        portada_serie: portada,
-        fondo_serie: fondo,
-        fondo_intensidad: intens,
       })
       .eq("id", user.id);
     setGuardando(false);
@@ -90,8 +84,6 @@ export default function Personalizar({ user, series, onClose, onSaved }) {
             {[
               { id: "avatar",  label: "🎭 Avatar" },
               { id: "favs",    label: `⭐ Favoritas (${favs.length}/4)` },
-              { id: "portada", label: "🖼️ Banner" },
-              { id: "fondo",   label: "🌌 Fondo" },
             ].map(t => (
               <button key={t.id} role="tab" aria-selected={pestana === t.id}
                       className={`sort-btn${pestana === t.id ? " active" : ""}`}
@@ -159,82 +151,6 @@ export default function Personalizar({ user, series, onClose, onSaved }) {
               </>
             )}
 
-            {/* ── PORTADA ── */}
-            {pestana === "portada" && (
-              <>
-                <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700, marginBottom: 10 }}>
-                  El póster que elijas se verá como banner en lo alto de tu perfil.
-                </p>
-                <input className="input" type="search" value={busca}
-                       onChange={e => setBusca(e.target.value)}
-                       placeholder="🔍  Buscar serie…" style={{ marginBottom: 12 }} />
-                <div className="pers-series">
-                  <button className={`pers-serie${portada == null ? " elegida" : ""}`}
-                          onClick={() => setPort(null)} title="Sin portada">
-                    <span className="pers-serie-color" style={{ background: "var(--bg-muted)" }} />
-                    <span className="pers-serie-nombre">Ninguna</span>
-                  </button>
-                  {filtradas.filter(s => s.poster).map(s => (
-                    <button key={s.id}
-                            className={`pers-serie${portada === s.id ? " elegida" : ""}`}
-                            onClick={() => setPort(s.id)}
-                            aria-pressed={portada === s.id}
-                            title={s.titulo}>
-                      <img src={posterTam(s.poster, "w185")} alt="" loading="lazy" />
-                      <span className="pers-serie-nombre">{s.titulo}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-            {/* ── FONDO DE PÁGINA ── */}
-            {pestana === "fondo" && (
-              <>
-                <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700, marginBottom: 10 }}>
-                  El póster se repite en mosaico como papel pintado, solo en tu
-                  perfil. El resto de la web no cambia.
-                </p>
-
-                {fondo != null && (
-                  <>
-                    <p className="pers-label">Tamaño del mosaico</p>
-                    <div className="pers-intensidad">
-                      {[
-                        { v: 1, t: "Pequeño" },
-                        { v: 2, t: "Medio" },
-                        { v: 3, t: "Grande" },
-                      ].map(o => (
-                        <button key={o.v}
-                                className={`sort-btn${intens === o.v ? " active" : ""}`}
-                                onClick={() => setIntens(o.v)}
-                                aria-pressed={intens === o.v}>{o.t}</button>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                <input className="input" type="search" value={busca}
-                       onChange={e => setBusca(e.target.value)}
-                       placeholder="🔍  Buscar serie…" style={{ margin: "12px 0" }} />
-                <div className="pers-series">
-                  <button className={`pers-serie${fondo == null ? " elegida" : ""}`}
-                          onClick={() => setFondo(null)} title="Trama de tebeo">
-                    <span className="pers-serie-color pers-serie-tebeo" />
-                    <span className="pers-serie-nombre">Tebeo</span>
-                  </button>
-                  {filtradas.filter(s2 => s2.poster).map(s2 => (
-                    <button key={s2.id}
-                            className={`pers-serie${fondo === s2.id ? " elegida" : ""}`}
-                            onClick={() => setFondo(s2.id)}
-                            aria-pressed={fondo === s2.id}
-                            title={s2.titulo}>
-                      <img src={posterTam(s2.poster, "w185")} alt="" loading="lazy" />
-                      <span className="pers-serie-nombre">{s2.titulo}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: "1.4rem" }}>

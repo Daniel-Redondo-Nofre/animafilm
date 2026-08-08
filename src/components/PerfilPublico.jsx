@@ -140,92 +140,48 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
     .map(id => series.find(s => s.id === id))
     .filter(Boolean);
 
-  const seriePortada = series.find(x => x.id === perfil.portada_serie);
-  const portadaUrl    = seriePortada?.poster ? posterTam(seriePortada.poster, "w500") : null;
-  const portadaColor  = seriePortada?.color  || "#C01200";
-  const portadaTitulo = seriePortada?.titulo || "";
-
-  const serieFondo = series.find(x => x.id === perfil.fondo_serie);
-  // w185: el fondo se repite en mosaico, no hace falta más resolución
-  // Imagen grande: ahora es un fondo único, no un mosaico
-  const fondoUrl   = serieFondo?.poster ? posterTam(serieFondo.poster, "w500") : null;
-  const fondoColor = serieFondo?.color  || "#C01200";
 
   const insignias = calcularInsignias(perfil, porDecada);
 
   return (
-    <div className={`page-enter${fondoUrl ? " con-fondo" : ""}`}>
-      {/* ── Fondo de página, si lo ha elegido ── */}
-      {fondoUrl && (
-        <div
-          className={`perfil-fondo intensidad-${perfil.fondo_intensidad ?? 2}`}
-          aria-hidden="true"
-          style={{ "--tinte": fondoColor }}
-        >
-          <img src={fondoUrl} alt="" />
-        </div>
-      )}
-
+    <div className="page-enter">
       {/* ── Cabecera ── */}
-      <header className="perfil-hero" style={{ "--tinte": portadaColor }}>
-        {portadaUrl && (
-          <div className="perfil-banda">
-            <div className="banda-texto">
-              <span>Serie destacada</span>
-              <strong className="font-display">{portadaTitulo}</strong>
-            </div>
+      <header className="perfil-ficha">
+        <Avatar perfil={perfil} size={84} />
+
+        <div className="perfil-datos">
+          <h1 className="perfil-nombre font-display">
+            {perfil.display_name || perfil.username}
+          </h1>
+          <p className="perfil-arroba">
+            @{perfil.username} · desde {new Date(perfil.created_at).getFullYear()}
+          </p>
+          {perfil.bio && <p className="perfil-bio">{perfil.bio}</p>}
+
+          <div className="perfil-acciones">
+            {esMiPerfil ? (
+              <>
+                <button className="btn btn-secondary" onClick={() => setPers(true)}>
+                  🎨 Personalizar
+                </button>
+                <button className="btn btn-ghost" onClick={() => setGestion("editar")}>
+                  ✏️ Editar datos
+                </button>
+                <button className="btn btn-ghost" onClick={() => setGestion("cuenta")}>
+                  ⚙️ Mi cuenta
+                </button>
+              </>
+            ) : (
+              <button
+                className={siguiendo ? "btn btn-ghost" : "btn btn-primary"}
+                onClick={alternarSeguir}
+                disabled={ocupado}
+                aria-pressed={siguiendo}
+              >
+                {siguiendo ? "✓ Siguiendo" : "+ Seguir"}
+              </button>
+            )}
           </div>
-        )}
-
-        <div className={`perfil-ficha${portadaUrl ? " con-banda" : ""}`}>
-          {/* Columna izquierda: quién es */}
-          <div className="perfil-identidad">
-            <Avatar perfil={perfil} size={84} />
-
-            <div className="perfil-datos">
-              <h1 className="perfil-nombre font-display">
-                {perfil.display_name || perfil.username}
-              </h1>
-              <p className="perfil-arroba">
-                @{perfil.username} · desde {new Date(perfil.created_at).getFullYear()}
-              </p>
-              {perfil.bio && <p className="perfil-bio">{perfil.bio}</p>}
-
-              <div className="perfil-acciones">
-                {esMiPerfil ? (
-                  <>
-                    <button className="btn btn-secondary" onClick={() => setPers(true)}>
-                      🎨 Personalizar
-                    </button>
-                    <button className="btn btn-ghost" onClick={() => setGestion("editar")}>
-                      ✏️ Editar datos
-                    </button>
-                    <button className="btn btn-ghost" onClick={() => setGestion("cuenta")}>
-                      ⚙️ Mi cuenta
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    className={siguiendo ? "btn btn-ghost" : "btn btn-primary"}
-                    onClick={alternarSeguir}
-                    disabled={ocupado}
-                    aria-pressed={siguiendo}
-                  >
-                    {siguiendo ? "✓ Siguiendo" : "+ Seguir"}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Columna derecha: la serie destacada, aparte del texto */}
-          {portadaUrl && seriePortada && (
-            <Link to={`/serie/${slugify(seriePortada.titulo)}`} className="perfil-destacada"
-                  title={`Serie destacada: ${portadaTitulo}`}>
-              <img src={portadaUrl} alt={portadaTitulo} />
-              <span>{portadaTitulo}</span>
-            </Link>
-          )}
         </div>
       </header>
 
