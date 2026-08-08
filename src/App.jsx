@@ -766,10 +766,10 @@ export default function App() {
   const totalPendientes=Object.values(pendientes).filter(Boolean).length;
 
   const NAV=[
-    {to:"/",          label:"📽️ Catálogo", end:true},
-    {to:"/comunidad", label:"🌐 Comunidad"},
-    {to:"/estadisticas", label:"📊 Datos"},
-    {to:"/perfil",    label:`⭐ Mi Perfil${totalVistas>0?` (${totalVistas})`:""}`},
+    {to:"/",             label:"📽️ Catálogo",  icono:"📽️", corto:"Catálogo",  end:true},
+    {to:"/comunidad",    label:"🌐 Comunidad", icono:"🌐", corto:"Comunidad"},
+    {to:"/estadisticas", label:"📊 Datos",     icono:"📊", corto:"Datos"},
+    {to:"/perfil",       label:`⭐ Mi Perfil${totalVistas>0?` (${totalVistas})`:""}`, icono:"⭐", corto:"Perfil"},
   ];
 
   const catalogo = (
@@ -780,7 +780,7 @@ export default function App() {
             </div>
             <div style={{ display:"flex", gap:12, marginBottom:"1.2rem", flexWrap:"wrap", alignItems:"center" }} className="animate-fadeUp delay-2">
               <input className="input" type="search" aria-label="Buscar serie por título, cadena o género" placeholder="🔍  Buscar serie…" value={textoBusqueda} onChange={e=>setTextoBusqueda(e.target.value)} style={{ flex:1, minWidth:180 }}/>
-              <div role="group" aria-label="Filtrar por década" style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              <div role="group" aria-label="Filtrar por década" className="filtros-decadas" style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                 {DECADAS.map(d=>(
                   <button key={d} className={d===decada?"btn btn-primary":"btn btn-secondary"} aria-pressed={d===decada} style={{ padding:"8px 16px", fontSize:13, borderRadius:24 }} onClick={()=>setDecada(d)}>{d}</button>
                 ))}
@@ -887,38 +887,55 @@ export default function App() {
       <a href="#contenido" className="skip-link">Saltar al contenido</a>
 
       <header className="site-header">
-        <div style={{ maxWidth:1200, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", height:62, padding:"0 1.5rem", gap:10 }}>
+        <div className="header-inner">
           <Link
             to="/"
             className="brand"
             onClick={()=>{ limpiarFiltros(); window.scrollTo({ top:0, behavior:"smooth" }); }}
             title="Volver al catálogo"
           >
-            <span style={{ fontSize:26 }}>📺</span>
-            <span className="font-display" style={{ fontSize:24 }}>AnimaFilm</span>
+            <span className="brand-icono">📺</span>
+            <span className="font-display brand-texto">AnimaFilm</span>
           </Link>
-          <nav aria-label="Navegación principal" style={{ display:"flex", gap:5, alignItems:"center" }}>
+
+          {/* Navegación de escritorio. En móvil se traslada abajo, al
+              alcance del pulgar, que es donde se espera encontrarla. */}
+          <nav aria-label="Navegación principal" className="nav-escritorio">
             {NAV.map(v=>(
               <NavLink key={v.to} to={v.to} end={v.end}
                 className={({isActive})=>`nav-pill${isActive?" active":""}`}>
                 {v.label}
               </NavLink>
             ))}
+          </nav>
+
+          <div className="header-acciones">
             <button className={`theme-toggle ${theme}`} onClick={toggleTheme}
                     role="switch" aria-checked={theme==="dark"}
                     aria-label={theme==="dark"?"Cambiar a modo claro":"Cambiar a modo oscuro"}
-                    title="Cambiar tema" style={{ marginLeft:6 }}>
+                    title="Cambiar tema">
               <div className="knob" aria-hidden="true">{theme==="dark"?"🌙":"☀️"}</div>
             </button>
             {session
-              ?<button className="btn btn-ghost" style={{ color:"var(--header-text)", borderColor:"color-mix(in srgb, var(--header-text) 40%, transparent)", fontSize:12, padding:"6px 12px", marginLeft:4 }} onClick={()=>supabase.auth.signOut()}>Salir</button>
-              :<button className="btn" style={{ background:"var(--header-text)", color:"var(--header-bg)", border:"none", fontSize:13, padding:"7px 16px", marginLeft:4 }} onClick={()=>{ setAuthMode("login"); setShowAuth(true); }}>Iniciar sesión</button>
+              ?<button className="btn btn-ghost btn-sesion" onClick={()=>supabase.auth.signOut()}>Salir</button>
+              :<button className="btn btn-sesion btn-entrar" onClick={()=>{ setAuthMode("login"); setShowAuth(true); }}>Entrar</button>
             }
-          </nav>
+          </div>
         </div>
       </header>
 
-      <main id="contenido" style={{ maxWidth:1200, margin:"0 auto", padding:"2rem 1.5rem" }}>
+      {/* Barra inferior: solo en móvil */}
+      <nav aria-label="Navegación principal" className="nav-movil">
+        {NAV.map(v=>(
+          <NavLink key={v.to} to={v.to} end={v.end}
+            className={({isActive})=>`nav-movil-item${isActive?" active":""}`}>
+            <span className="nav-movil-icono" aria-hidden="true">{v.icono}</span>
+            <span className="nav-movil-texto">{v.corto}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <main id="contenido" className="contenido">
         <Suspense fallback={null}>
         <Routes>
           <Route path="/"             element={catalogo} />

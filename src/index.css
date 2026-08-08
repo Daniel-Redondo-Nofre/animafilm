@@ -582,7 +582,7 @@ body > * { position: relative; z-index: 1; }
 /* ═══════════════════════════════════════════════════════════════════════
    MÓVIL
    ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .series-grid { grid-template-columns: repeat(2,1fr); gap: 12px; }
   .hide-mobile { display: none !important; }
   .overlay { align-items: flex-end; padding: 0; }
@@ -595,7 +595,7 @@ body > * { position: relative; z-index: 1; }
   .hero-title { font-size: 30px; }
   .nav-pill { padding: 4px 9px; font-size: 12px; }
 }
-@media (max-width: 380px) { .series-grid { gap: 8px; } }
+@media (max-width: 400px) { .series-grid { gap: 8px; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -902,7 +902,7 @@ body > * { position: relative; z-index: 1; }
   margin-left: 1px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .sort-label { width: 100%; margin-bottom: 2px; }
   .sort-btn { font-size: 11px; padding: 4px 9px; }
 }
@@ -1048,7 +1048,7 @@ body > * { position: relative; z-index: 1; }
 }
 .toast-cerrar:hover { color: var(--text); background: var(--bg-muted); }
 
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .toast-stack { bottom: 12px; }
   .toast { font-size: 13px; padding: 10px 12px; }
 }
@@ -1127,7 +1127,7 @@ body > * { position: relative; z-index: 1; }
   transform: translateY(-2px) rotate(-1deg);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .genre-pill { font-size: 11px; padding: 3px 9px; }
   .genre-bar .sort-label { width: 100%; margin-bottom: 2px; }
 }
@@ -1249,7 +1249,7 @@ body > * { position: relative; z-index: 1; }
 .enlace-usuario { text-decoration: none; color: inherit; }
 .enlace-usuario:hover strong { color: var(--accent); text-decoration: underline; }
 
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .perfil-cabecera { flex-direction: column; align-items: center; text-align: center; gap: 12px; }
   .perfil-cifras   { grid-template-columns: repeat(3, 1fr); }
   .comparacion-grid strong { font-size: 24px; }
@@ -1390,7 +1390,7 @@ body > * { position: relative; z-index: 1; }
 }
 .ranking-valor small { font-size: 11px; color: var(--text-muted); }
 
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .listas-grid    { grid-template-columns: 1fr; }
   .rankings-grid  { grid-template-columns: 1fr; }
   .lista-cabecera { flex-direction: column; }
@@ -1591,7 +1591,7 @@ body > * { position: relative; z-index: 1; }
   font-size: 11px; font-weight: 900;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .favoritas-grid  { grid-template-columns: repeat(2, 1fr); }
   .insignias-grid  { grid-template-columns: 1fr; }
 }
@@ -1699,7 +1699,204 @@ body > * { position: relative; z-index: 1; }
   background-size: 9px 9px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 620px) {
   .perfil-banner { height: 120px; }
   .perfil-cabecera.bajo-banner .avatar { margin-top: -46px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ══  DISEÑO RESPONSIVE  ═══════════════════════════════════════════════
+   Escritorio primero, con tres cortes: 900px (tabletas), 620px (móvil
+   grande) y 400px (móvil pequeño). En móvil la navegación baja al pulgar.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Contenedores ─────────────────────────────────────────────────── */
+.contenido {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  height: 62px;
+  padding: 0 1.5rem;
+  /* Respeta la muesca y las esquinas redondeadas de los móviles */
+  padding-left:  max(1.5rem, env(safe-area-inset-left));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
+}
+
+.brand-icono { font-size: 26px; }
+.brand-texto { font-size: 24px; }
+
+.nav-escritorio {
+  display: flex; gap: 5px; align-items: center;
+  margin-left: auto;
+}
+.header-acciones {
+  display: flex; gap: 8px; align-items: center;
+}
+.btn-sesion { font-size: 12px; padding: 6px 12px; }
+.btn-ghost.btn-sesion {
+  color: var(--header-text);
+  border-color: color-mix(in srgb, var(--header-text) 40%, transparent);
+}
+.btn-entrar {
+  background: var(--header-text);
+  color: var(--header-bg);
+  border: none;
+  font-size: 13px; padding: 7px 16px;
+}
+
+/* La barra inferior no existe en escritorio */
+.nav-movil { display: none; }
+
+/* ── Filas de filtros que se desbordan ───────────────────────────── */
+/* En móvil, cuatro décadas + doce géneros + cuatro criterios ocuparían
+   varias filas y empujarían el catálogo fuera de la pantalla. Mejor
+   deslizarlas en horizontal, como un carrusel. */
+@media (max-width: 620px) {
+  .sort-bar,
+  .genre-bar,
+  .filtros-decadas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+  }
+  .sort-bar::-webkit-scrollbar,
+  .genre-bar::-webkit-scrollbar,
+  .filtros-decadas::-webkit-scrollbar { display: none; }
+
+  .sort-bar > *,
+  .genre-bar > *,
+  .filtros-decadas > * { flex: 0 0 auto; scroll-snap-align: start; }
+
+  .sort-label { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TABLETA  ≤ 900px
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .contenido { padding: 1.5rem 1.1rem; }
+  .nav-pill  { padding: 5px 11px; font-size: 12px; }
+  .brand-texto { font-size: 21px; }
+  .series-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+  .rankings-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MÓVIL  ≤ 620px
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 620px) {
+
+  /* La navegación baja al alcance del pulgar */
+  .nav-escritorio { display: none; }
+
+  .nav-movil {
+    display: flex;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 250;
+    background: var(--header-bg);
+    border-top: 3px solid var(--header-border);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -3px 18px rgba(0,0,0,.35);
+  }
+  .nav-movil-item {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    /* 52px: por encima del mínimo recomendado para tocar con el dedo */
+    min-height: 52px;
+    padding: 7px 2px 6px;
+    text-decoration: none;
+    color: color-mix(in srgb, var(--header-text) 65%, transparent);
+    transition: color var(--t-fast), background-color var(--t-fast);
+  }
+  .nav-movil-item.active {
+    color: var(--header-text);
+    background: color-mix(in srgb, var(--header-text) 14%, transparent);
+  }
+  .nav-movil-icono { font-size: 19px; line-height: 1; }
+  .nav-movil-texto {
+    font-family: var(--font-display);
+    font-size: 11px; letter-spacing: .03em;
+  }
+
+  /* Hueco para que la barra no tape el final del contenido */
+  .contenido { padding: 1.2rem .9rem calc(72px + env(safe-area-inset-bottom)); }
+
+  .header-inner { height: 54px; padding: 0 .9rem; gap: 8px; }
+  .header-acciones { margin-left: auto; }
+  .brand-icono { font-size: 22px; }
+  .brand-texto { font-size: 19px; }
+
+  /* Los avisos flotantes, encima de la barra inferior */
+  .toast-stack { bottom: calc(74px + env(safe-area-inset-bottom)); }
+
+  /* Los inputs necesitan 16px o iOS hace zoom al enfocarlos */
+  .input, .textarea { font-size: 16px; }
+
+  /* Área táctil mínima en los botones de acción */
+  .btn { min-height: 38px; }
+  .sort-btn, .genre-pill { min-height: 34px; }
+
+  .hero-title { font-size: clamp(26px, 8vw, 34px); }
+
+  /* Ficha de serie */
+  .modal-head { flex-direction: row; gap: 13px; padding: 16px 14px 12px; }
+  .modal-poster { flex: 0 0 96px; width: 96px; }
+  .modal-title  { font-size: 20px; }
+
+  /* Perfil */
+  .perfil-cifras { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .perfil-cifra span:first-child { font-size: 21px; }
+  .comparacion-grid { grid-template-columns: repeat(2, 1fr); gap: 11px; }
+  .comparacion-grid strong { font-size: 22px; }
+
+  /* Estadísticas */
+  .ranking { padding: 1rem 1.1rem; }
+  .ranking-serie strong { font-size: 12px; }
+
+  /* Personalizar: el modal ocupa casi toda la pantalla */
+  .pers-panel  { max-height: 46vh; }
+  .pers-series { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+  .pers-emojis { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MÓVIL PEQUEÑO  ≤ 400px
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+  .contenido { padding: 1rem .7rem calc(72px + env(safe-area-inset-bottom)); }
+  .series-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .brand-texto { font-size: 17px; }
+  .btn-sesion { font-size: 11px; padding: 5px 10px; }
+  .nav-movil-texto { font-size: 10px; }
+  .favoritas-grid { grid-template-columns: repeat(2, 1fr); }
+  .card-title { font-size: 12px; }
+  .card-meta  { font-size: 10px; }
+  .perfil-cifras { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PANTALLAS ANCHAS  ≥ 1500px
+   ══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1500px) {
+  .contenido   { max-width: 1400px; }
+  .header-inner { max-width: 1400px; }
+  .series-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ALTURA REDUCIDA (móvil en horizontal)
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-height: 520px) and (orientation: landscape) {
+  .nav-movil-texto { display: none; }
+  .nav-movil-item  { min-height: 42px; }
+  .perfil-banner   { height: 96px; }
 }
