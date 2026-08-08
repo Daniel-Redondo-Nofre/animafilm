@@ -1793,64 +1793,36 @@ body > * { position: relative; z-index: 1; }
   .perfil-banner   { height: 96px; }
 }
 
+
+
 /* ═══════════════════════════════════════════════════════════════════════
-   BANNER DEL PERFIL
-   Un póster es 2:3; recortarlo a una franja apaisada amplía el centro y
-   destroza la imagen. Así que aquí NO se usa como imagen que se lee: se
-   usa como textura. Va desenfocado, teñido con el color de la serie y
-   con la trama Ben-Day encima, de modo que el resultado es una banda
-   de color con carácter, no un recorte fallido. El título aparece en
-   una cartela para que se sepa qué serie es.
+   CABECERA DEL PERFIL
+   Un póster es 2:3. Estirarlo a una banda apaisada lo destroza, y
+   desenfocarlo solo lo convierte en un borrón. Así que aquí la banda NO
+   lleva imagen: es una franja de color derivada de la serie, con la
+   trama del tebeo. El póster aparece aparte, nítido y a su proporción,
+   como una viñeta destacada dentro de la ficha.
    ═══════════════════════════════════════════════════════════════════════ */
-.perfil-banner {
-  position: relative;
-  height: 132px;
-  overflow: hidden;
+.perfil-hero { margin-bottom: 1.2rem; }
+
+.perfil-banda {
+  height: 84px;
   border: var(--border-w) solid var(--border);
   border-bottom: none;
   border-radius: var(--radius) var(--radius) 0 0;
-  background: var(--tinte, var(--accent));
-}
-.perfil-banner > img {
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center 35%;
-  display: block;
-  filter: blur(7px) saturate(1.5) contrast(1.15);
-  transform: scale(1.22);
-}
-/* Tinte con el color de la serie: convierte el desenfoque en una banda
-   deliberada en lugar de una foto borrosa. */
-.banner-tinte {
-  position: absolute; inset: 0;
-  background: linear-gradient(
-    115deg,
-    color-mix(in srgb, var(--tinte) 88%, transparent) 0%,
-    color-mix(in srgb, var(--tinte) 55%, transparent) 55%,
-    color-mix(in srgb, var(--tinte) 78%, transparent) 100%
-  );
-}
-.banner-trama {
-  position: absolute; inset: 0;
-  background-image: radial-gradient(circle, rgba(0,0,0,.22) 1.5px, transparent 1.5px);
-  background-size: 8px 8px;
-}
-/* Funde la banda con la ficha de abajo */
-.banner-fundido {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
-  background: linear-gradient(to bottom, transparent, var(--bg-card));
-}
-.banner-etiqueta {
-  position: absolute; top: 10px; right: 12px;
-  max-width: 60%;
-  padding: 3px 11px;
-  background: var(--amarillo);
-  color: #0D0D0D;
-  border: 2px solid #0D0D0D;
-  border-radius: 3px;
-  box-shadow: 2px 2px 0 #0D0D0D;
-  font-family: var(--font-display);
-  font-size: 12px; letter-spacing: .04em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background-color: var(--tinte, var(--accent));
+  background-image:
+    /* Trama Ben-Day */
+    radial-gradient(circle, rgba(0,0,0,.20) 1.5px, transparent 1.5px),
+    /* Rayas diagonales muy suaves: le dan textura de papel impreso */
+    repeating-linear-gradient(115deg,
+      rgba(255,255,255,.07) 0 14px,
+      transparent 14px 34px),
+    linear-gradient(105deg,
+      color-mix(in srgb, #000 22%, var(--tinte, var(--accent))) 0%,
+      var(--tinte, var(--accent)) 55%,
+      color-mix(in srgb, #fff 16%, var(--tinte, var(--accent))) 100%);
+  background-size: 8px 8px, auto, auto;
 }
 
 .perfil-cabecera.bajo-banner {
@@ -1858,60 +1830,96 @@ body > * { position: relative; z-index: 1; }
   border-top: none;
   margin-bottom: 0;
   padding-top: .9rem;
+  align-items: flex-start;
 }
-/* El avatar se monta sobre la banda. Necesita z-index propio: las capas
-   del banner lo tapaban por la mitad. */
+/* El avatar se monta sobre la banda */
 .perfil-cabecera.bajo-banner .avatar {
   position: relative;
   z-index: 3;
-  margin-top: -54px;
+  margin-top: -50px;
   border-width: 4px;
-  box-shadow: 3px 3px 0 var(--border), 0 5px 20px rgba(0,0,0,.4);
+  box-shadow: 3px 3px 0 var(--border), 0 5px 20px rgba(0,0,0,.35);
+}
+
+/* ── Póster destacado: nítido y a su proporción ─────────────────────── */
+.perfil-poster {
+  flex: 0 0 92px;
+  width: 92px;
+  margin-top: -58px;
+  position: relative;
+  z-index: 3;
+  text-decoration: none;
+  display: block;
+}
+.perfil-poster img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--sh-card);
+  transition: transform var(--t-spring), box-shadow var(--t-spring);
+}
+.perfil-poster:hover img { transform: translate(-2px,-3px); box-shadow: var(--sh-card-hover); }
+.perfil-poster span {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px; font-weight: 800;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    FONDO DE PÁGINA DEL PERFIL
-   Un único póster estirado a pantalla completa queda borroso y sin
-   gracia. En mosaico se lee como papel pintado: se reconoce la serie,
-   se repite el motivo y encaja con la estética de tebeo.
+   Repetir el póster a todo color queda repetitivo y barato. Pasado a
+   monocromo y teñido con el color de la serie, deja de leerse como
+   "la misma foto muchas veces" y se lee como papel pintado.
    ═══════════════════════════════════════════════════════════════════════ */
 .perfil-fondo {
   position: fixed; inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: var(--tapiz);
+  overflow: hidden;
+  background: var(--bg);
+}
+.fondo-tapiz {
+  position: absolute; inset: -20px;
   background-repeat: repeat;
   background-position: center top;
+  /* Monocromo y de bajo contraste: textura, no galería de imágenes */
+  filter: grayscale(1) contrast(.45) brightness(1.35);
 }
-/* Velo del color de la serie + fondo del tema: garantiza que el texto
-   siga legible sea cual sea el póster elegido. */
+/* Tinte del color de la serie + fondo del tema, para que el texto
+   siga legible sea cual sea el póster. */
 .perfil-fondo::after {
   content: '';
   position: absolute; inset: 0;
   background:
-    linear-gradient(160deg,
-      color-mix(in srgb, var(--tinte) 34%, transparent),
-      transparent 60%),
+    linear-gradient(165deg,
+      color-mix(in srgb, var(--tinte) 42%, transparent) 0%,
+      color-mix(in srgb, var(--tinte) 12%, transparent) 55%,
+      transparent 100%),
     var(--bg);
+  mix-blend-mode: normal;
 }
 
-.perfil-fondo.intensidad-1 { background-size: 74px auto; }
-.perfil-fondo.intensidad-2 { background-size: 104px auto; }
-.perfil-fondo.intensidad-3 { background-size: 148px auto; }
+.perfil-fondo.intensidad-1 .fondo-tapiz { background-size: 62px auto; opacity: .5; }
+.perfil-fondo.intensidad-2 .fondo-tapiz { background-size: 88px auto; opacity: .7; }
+.perfil-fondo.intensidad-3 .fondo-tapiz { background-size: 124px auto; opacity: .9; }
 
-.perfil-fondo.intensidad-1::after { opacity: .945; }
-.perfil-fondo.intensidad-2::after { opacity: .905; }
-.perfil-fondo.intensidad-3::after { opacity: .845; }
+.perfil-fondo.intensidad-1::after { opacity: .90; }
+.perfil-fondo.intensidad-2::after { opacity: .85; }
+.perfil-fondo.intensidad-3::after { opacity: .78; }
 
-/* De noche los pósters son claros y el texto cálido pierde contraste:
-   hace falta más velo. */
-[data-theme="dark"] .perfil-fondo.intensidad-1::after { opacity: .955; }
-[data-theme="dark"] .perfil-fondo.intensidad-2::after { opacity: .925; }
-[data-theme="dark"] .perfil-fondo.intensidad-3::after { opacity: .875; }
+[data-theme="dark"] .fondo-tapiz { filter: grayscale(1) contrast(.4) brightness(.5); }
+[data-theme="dark"] .perfil-fondo.intensidad-1::after { opacity: .92; }
+[data-theme="dark"] .perfil-fondo.intensidad-2::after { opacity: .88; }
+[data-theme="dark"] .perfil-fondo.intensidad-3::after { opacity: .82; }
 
-/* Selector de intensidad */
 .pers-intensidad { display: flex; gap: 6px; flex-wrap: wrap; }
-
 .pers-serie-tebeo {
   background-color: var(--bg);
   background-image: radial-gradient(circle, var(--dots) 1.5px, transparent 1.5px);
@@ -1919,7 +1927,12 @@ body > * { position: relative; z-index: 1; }
 }
 
 @media (max-width: 620px) {
-  .perfil-banner { height: 104px; }
-  .perfil-cabecera.bajo-banner .avatar { margin-top: -44px; }
-  .banner-etiqueta { font-size: 11px; top: 8px; right: 8px; }
+  .perfil-banda { height: 64px; }
+  .perfil-cabecera.bajo-banner { flex-direction: row; align-items: flex-start; text-align: left; }
+  .perfil-cabecera.bajo-banner .avatar { margin-top: -40px; }
+  .perfil-poster { flex: 0 0 62px; width: 62px; margin-top: -44px; }
+  .perfil-poster span { display: none; }
+}
+@media (max-width: 400px) {
+  .perfil-poster { display: none; }
 }

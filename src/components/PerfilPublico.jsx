@@ -159,21 +159,15 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
         <div
           className={`perfil-fondo intensidad-${perfil.fondo_intensidad ?? 2}`}
           aria-hidden="true"
-          style={{ "--tapiz": `url(${fondoUrl})`, "--tinte": fondoColor }}
-        />
+          style={{ "--tinte": fondoColor }}
+        >
+          <div className="fondo-tapiz" style={{ backgroundImage: `url(${fondoUrl})` }} />
+        </div>
       )}
 
       {/* ── Cabecera ── */}
-      <div className="perfil-hero">
-        {portadaUrl && (
-          <div className="perfil-banner" style={{ "--tinte": portadaColor }}>
-            <img src={portadaUrl} alt="" aria-hidden="true" />
-            <span className="banner-tinte" aria-hidden="true" />
-            <span className="banner-trama" aria-hidden="true" />
-            <span className="banner-fundido" aria-hidden="true" />
-            <span className="banner-etiqueta">{portadaTitulo}</span>
-          </div>
-        )}
+      <div className="perfil-hero" style={{ "--tinte": portadaColor }}>
+        {portadaUrl && <div className="perfil-banda" aria-hidden="true" />}
 
         <div className={`perfil-cabecera${portadaUrl ? " bajo-banner" : ""}`}>
         <Avatar perfil={perfil} size={84} />
@@ -212,6 +206,14 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
               </button>
             )}
           </div>
+
+          {portadaUrl && seriePortada && (
+            <Link to={`/serie/${slugify(seriePortada.titulo)}`} className="perfil-poster"
+                  title={`Serie destacada: ${portadaTitulo}`}>
+              <img src={portadaUrl} alt={portadaTitulo} />
+              <span>{portadaTitulo}</span>
+            </Link>
+          )}
         </div>
         </div>
       </div>
