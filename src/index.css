@@ -1775,12 +1775,14 @@ body > * { position: relative; z-index: 1; }
 }
 
 .perfil-banda {
-  height: 116px;
+  height: 88px;
   border: var(--border-w) solid var(--border);
   border-bottom: none;
   border-radius: var(--radius) var(--radius) 0 0;
-  padding: 1rem 1.3rem;
-  display: flex; align-items: flex-start;
+  padding: 0 1.3rem .7rem;
+  /* El texto se apoya en el borde inferior: alineado arriba dejaba un
+     bloque de color muerto debajo que parecía un hueco sin rellenar. */
+  display: flex; align-items: flex-end;
   background-color: var(--tinte, var(--accent));
   background-image:
     radial-gradient(circle, rgba(0,0,0,.22) 1.5px, transparent 1.5px),
@@ -1820,8 +1822,8 @@ body > * { position: relative; z-index: 1; }
 /* ── Póster anclado: sobrevuela banda y ficha ── */
 .perfil-destacada {
   position: absolute;
-  top: 20px; right: 22px;
-  width: 104px;
+  top: 16px; right: 22px;
+  width: 94px;
   z-index: 4;
   text-decoration: none;
 }
@@ -1835,6 +1837,16 @@ body > * { position: relative; z-index: 1; }
   transition: transform var(--t-spring);
 }
 .perfil-destacada:hover img { transform: translate(-2px,-4px) rotate(-1deg); }
+/* Sin estas reglas el título se renderizaba sin estilo y estiraba el
+   bloque hasta salirse de la tarjeta. */
+.perfil-destacada span {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px; font-weight: 800; line-height: 1.25;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ── Ficha ── */
 .perfil-ficha {
@@ -1849,7 +1861,10 @@ body > * { position: relative; z-index: 1; }
   border-top: none;
   border-radius: 0 0 var(--radius) var(--radius);
   /* Hueco a la derecha para el póster anclado */
-  padding: 1.1rem 148px 1.4rem 1.5rem;
+  padding: 1.1rem 138px 1.4rem 1.5rem;
+  /* Garantiza que la tarjeta cubra el póster: 16 arriba + 141 de imagen
+     + 20 de título = 177, menos los 88 de la banda = 89 mínimo. */
+  min-height: 96px;
 }
 .perfil-identidad { display: flex; align-items: flex-start; gap: 16px; flex: 1 1 auto; min-width: 0; }
 .perfil-ficha .avatar { flex-shrink: 0; }
@@ -1912,13 +1927,13 @@ body > * { position: relative; z-index: 1; }
       transparent 70%),
     var(--bg);
 }
-.perfil-fondo.intensidad-1 img { filter: blur(26px) saturate(1.2); }
-.perfil-fondo.intensidad-2 img { filter: blur(16px) saturate(1.3); }
-.perfil-fondo.intensidad-3 img { filter: blur(8px)  saturate(1.35); }
+.perfil-fondo.intensidad-1 img { filter: blur(30px) saturate(.9); }
+.perfil-fondo.intensidad-2 img { filter: blur(20px) saturate(1); }
+.perfil-fondo.intensidad-3 img { filter: blur(12px) saturate(1.1); }
 
-.perfil-fondo.intensidad-1::after { opacity: .90; }
-.perfil-fondo.intensidad-2::after { opacity: .82; }
-.perfil-fondo.intensidad-3::after { opacity: .70; }
+.perfil-fondo.intensidad-1::after { opacity: .955; }
+.perfil-fondo.intensidad-2::after { opacity: .915; }
+.perfil-fondo.intensidad-3::after { opacity: .855; }
 
 [data-theme="dark"] .perfil-fondo.intensidad-1::after { opacity: .92; }
 [data-theme="dark"] .perfil-fondo.intensidad-2::after { opacity: .86; }
@@ -1949,12 +1964,13 @@ body > * { position: relative; z-index: 1; }
 }
 
 @media (max-width: 620px) {
-  .perfil-banda { height: 96px; padding: .8rem 1rem; }
-  .banda-texto  { padding-right: 88px; }
+  .perfil-banda { height: 72px; padding: 0 1rem .6rem; }
+  .banda-texto  { padding-right: 82px; }
   .banda-texto span { font-size: 10px; letter-spacing: .12em; }
-  .perfil-destacada { top: 14px; right: 12px; width: 70px; }
+  .perfil-destacada { top: 12px; right: 12px; width: 66px; }
+  .perfil-destacada span { display: none; }
   .perfil-ficha { padding: 1.1rem 1rem; gap: 12px; }
-  .perfil-ficha.con-banda { padding: 1rem 92px 1.2rem 1rem; }
+  .perfil-ficha.con-banda { padding: 1rem 88px 1.2rem 1rem; min-height: 62px; }
   .perfil-identidad { gap: 12px; }
   .perfil-cifras { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .perfil-cifra span:first-child { font-size: 21px; }
