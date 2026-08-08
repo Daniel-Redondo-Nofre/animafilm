@@ -142,20 +142,34 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
 
   const portadaUrl = (() => {
     const s2 = series.find(x => x.id === perfil.portada_serie);
-    return s2?.poster ? posterTam(s2.poster, "w342") : null;
+    return s2?.poster ? posterTam(s2.poster, "w500") : null;
+  })();
+
+  const fondoUrl = (() => {
+    const s2 = series.find(x => x.id === perfil.fondo_serie);
+    return s2?.poster ? posterTam(s2.poster, "w500") : null;
   })();
 
   const insignias = calcularInsignias(perfil, porDecada);
 
   return (
     <div className="page-enter">
+      {/* ── Fondo de página, si lo ha elegido ── */}
+      {fondoUrl && (
+        <div className={`perfil-fondo intensidad-${perfil.fondo_intensidad ?? 2}`} aria-hidden="true">
+          <img src={fondoUrl} alt="" />
+        </div>
+      )}
+
       {/* ── Cabecera ── */}
-      <div className={`perfil-cabecera${portadaUrl ? " con-portada" : ""}`}>
+      <div className="perfil-hero">
         {portadaUrl && (
-          <div className="perfil-portada" aria-hidden="true">
+          <div className="perfil-banner" aria-hidden="true">
             <img src={portadaUrl} alt="" />
           </div>
         )}
+
+        <div className={`perfil-cabecera${portadaUrl ? " bajo-banner" : ""}`}>
         <Avatar perfil={perfil} size={84} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="font-display" style={{ fontSize: 32, color: "var(--accent)", lineHeight: 1.1 }}>
@@ -192,6 +206,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
               </button>
             )}
           </div>
+        </div>
         </div>
       </div>
 
