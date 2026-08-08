@@ -191,18 +191,18 @@ export default function Personalizar({ user, series, onClose, onSaved }) {
             {pestana === "fondo" && (
               <>
                 <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700, marginBottom: 10 }}>
-                  Sustituye la trama de puntos de tu perfil por un póster.
-                  Solo se ve en tu página; el resto de la web no cambia.
+                  El póster se repite en mosaico como papel pintado, solo en tu
+                  perfil. El resto de la web no cambia.
                 </p>
 
                 {fondo != null && (
                   <>
-                    <p className="pers-label">Intensidad</p>
+                    <p className="pers-label">Tamaño del mosaico</p>
                     <div className="pers-intensidad">
                       {[
-                        { v: 1, t: "Sutil" },
-                        { v: 2, t: "Media" },
-                        { v: 3, t: "Fuerte" },
+                        { v: 1, t: "Pequeño" },
+                        { v: 2, t: "Medio" },
+                        { v: 3, t: "Grande" },
                       ].map(o => (
                         <button key={o.v}
                                 className={`sort-btn${intens === o.v ? " active" : ""}`}

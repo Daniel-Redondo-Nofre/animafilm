@@ -140,15 +140,15 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
     .map(id => series.find(s => s.id === id))
     .filter(Boolean);
 
-  const portadaUrl = (() => {
-    const s2 = series.find(x => x.id === perfil.portada_serie);
-    return s2?.poster ? posterTam(s2.poster, "w500") : null;
-  })();
+  const seriePortada = series.find(x => x.id === perfil.portada_serie);
+  const portadaUrl    = seriePortada?.poster ? posterTam(seriePortada.poster, "w500") : null;
+  const portadaColor  = seriePortada?.color  || "#C01200";
+  const portadaTitulo = seriePortada?.titulo || "";
 
-  const fondoUrl = (() => {
-    const s2 = series.find(x => x.id === perfil.fondo_serie);
-    return s2?.poster ? posterTam(s2.poster, "w500") : null;
-  })();
+  const serieFondo = series.find(x => x.id === perfil.fondo_serie);
+  // w185: el fondo se repite en mosaico, no hace falta más resolución
+  const fondoUrl   = serieFondo?.poster ? posterTam(serieFondo.poster, "w185") : null;
+  const fondoColor = serieFondo?.color  || "#C01200";
 
   const insignias = calcularInsignias(perfil, porDecada);
 
@@ -156,16 +156,22 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
     <div className="page-enter">
       {/* ── Fondo de página, si lo ha elegido ── */}
       {fondoUrl && (
-        <div className={`perfil-fondo intensidad-${perfil.fondo_intensidad ?? 2}`} aria-hidden="true">
-          <img src={fondoUrl} alt="" />
-        </div>
+        <div
+          className={`perfil-fondo intensidad-${perfil.fondo_intensidad ?? 2}`}
+          aria-hidden="true"
+          style={{ "--tapiz": `url(${fondoUrl})`, "--tinte": fondoColor }}
+        />
       )}
 
       {/* ── Cabecera ── */}
       <div className="perfil-hero">
         {portadaUrl && (
-          <div className="perfil-banner" aria-hidden="true">
-            <img src={portadaUrl} alt="" />
+          <div className="perfil-banner" style={{ "--tinte": portadaColor }}>
+            <img src={portadaUrl} alt="" aria-hidden="true" />
+            <span className="banner-tinte" aria-hidden="true" />
+            <span className="banner-trama" aria-hidden="true" />
+            <span className="banner-fundido" aria-hidden="true" />
+            <span className="banner-etiqueta">{portadaTitulo}</span>
           </div>
         )}
 

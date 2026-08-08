@@ -1597,114 +1597,6 @@ body > * { position: relative; z-index: 1; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   BANNER DEL PERFIL
-   Una franja propia sobre la ficha, con el avatar montado a caballo
-   entre las dos. Antes el póster iba borroso DETRÁS del texto, que es
-   lo que lo hacía verse sucio: la imagen competía con lo que había que
-   leer en lugar de acompañarlo.
-   ═══════════════════════════════════════════════════════════════════════ */
-.perfil-hero { margin-bottom: 1.2rem; }
-
-.perfil-banner {
-  height: 168px;
-  border: var(--border-w) solid var(--border);
-  border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
-  overflow: hidden;
-  position: relative;
-  background: var(--bg-muted);
-}
-.perfil-banner img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  object-position: center 22%;
-  display: block;
-}
-/* Degradado inferior: funde la imagen con la ficha de abajo */
-.perfil-banner::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 45%,
-    color-mix(in srgb, var(--bg-card) 55%, transparent) 78%,
-    var(--bg-card) 100%
-  );
-}
-/* Trama Ben-Day sobre la imagen: la integra con el resto de la interfaz */
-.perfil-banner::before {
-  content: '';
-  position: absolute; inset: 0; z-index: 1;
-  background-image: radial-gradient(circle, rgba(0,0,0,.16) 1px, transparent 1px);
-  background-size: 7px 7px;
-}
-
-.perfil-cabecera.bajo-banner {
-  border-radius: 0 0 var(--radius) var(--radius);
-  border-top: none;
-  margin-bottom: 0;
-  padding-top: 1rem;
-}
-/* El avatar sube para montarse sobre el banner */
-.perfil-cabecera.bajo-banner .avatar {
-  margin-top: -56px;
-  border-width: 4px;
-  box-shadow: 3px 3px 0 var(--border), 0 4px 18px rgba(0,0,0,.35);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   FONDO DE PÁGINA DEL PERFIL
-   Sustituye la trama de puntos, solo en el perfil de quien lo eligió.
-   ═══════════════════════════════════════════════════════════════════════ */
-.perfil-fondo {
-  position: fixed; inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-}
-.perfil-fondo img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transform: scale(1.08);
-}
-/* El velo garantiza que el texto siga legible pase lo que pase con la
-   imagen. Sin él, un póster claro haría ilegible el modo claro. */
-.perfil-fondo::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: var(--bg);
-}
-.perfil-fondo.intensidad-1 img { filter: blur(14px) saturate(1.1); }
-.perfil-fondo.intensidad-2 img { filter: blur(9px)  saturate(1.15); }
-.perfil-fondo.intensidad-3 img { filter: blur(5px)  saturate(1.2); }
-
-.perfil-fondo.intensidad-1::after { opacity: .93; }
-.perfil-fondo.intensidad-2::after { opacity: .86; }
-.perfil-fondo.intensidad-3::after { opacity: .74; }
-
-/* De noche hace falta más velo: los pósters son claros y el texto
-   del tema oscuro es cálido y de bajo contraste sobre ellos. */
-[data-theme="dark"] .perfil-fondo.intensidad-1::after { opacity: .95; }
-[data-theme="dark"] .perfil-fondo.intensidad-2::after { opacity: .90; }
-[data-theme="dark"] .perfil-fondo.intensidad-3::after { opacity: .80; }
-
-/* Selector de intensidad */
-.pers-intensidad { display: flex; gap: 6px; flex-wrap: wrap; }
-
-/* Miniatura del fondo "tebeo" en el selector */
-.pers-serie-tebeo {
-  background-color: var(--bg);
-  background-image: radial-gradient(circle, var(--dots) 1.5px, transparent 1.5px);
-  background-size: 9px 9px;
-}
-
-@media (max-width: 620px) {
-  .perfil-banner { height: 120px; }
-  .perfil-cabecera.bajo-banner .avatar { margin-top: -46px; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
    ══  DISEÑO RESPONSIVE  ═══════════════════════════════════════════════
    Escritorio primero, con tres cortes: 900px (tabletas), 620px (móvil
    grande) y 400px (móvil pequeño). En móvil la navegación baja al pulgar.
@@ -1899,4 +1791,135 @@ body > * { position: relative; z-index: 1; }
   .nav-movil-texto { display: none; }
   .nav-movil-item  { min-height: 42px; }
   .perfil-banner   { height: 96px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BANNER DEL PERFIL
+   Un póster es 2:3; recortarlo a una franja apaisada amplía el centro y
+   destroza la imagen. Así que aquí NO se usa como imagen que se lee: se
+   usa como textura. Va desenfocado, teñido con el color de la serie y
+   con la trama Ben-Day encima, de modo que el resultado es una banda
+   de color con carácter, no un recorte fallido. El título aparece en
+   una cartela para que se sepa qué serie es.
+   ═══════════════════════════════════════════════════════════════════════ */
+.perfil-banner {
+  position: relative;
+  height: 132px;
+  overflow: hidden;
+  border: var(--border-w) solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--tinte, var(--accent));
+}
+.perfil-banner > img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 35%;
+  display: block;
+  filter: blur(7px) saturate(1.5) contrast(1.15);
+  transform: scale(1.22);
+}
+/* Tinte con el color de la serie: convierte el desenfoque en una banda
+   deliberada en lugar de una foto borrosa. */
+.banner-tinte {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--tinte) 88%, transparent) 0%,
+    color-mix(in srgb, var(--tinte) 55%, transparent) 55%,
+    color-mix(in srgb, var(--tinte) 78%, transparent) 100%
+  );
+}
+.banner-trama {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(0,0,0,.22) 1.5px, transparent 1.5px);
+  background-size: 8px 8px;
+}
+/* Funde la banda con la ficha de abajo */
+.banner-fundido {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+  background: linear-gradient(to bottom, transparent, var(--bg-card));
+}
+.banner-etiqueta {
+  position: absolute; top: 10px; right: 12px;
+  max-width: 60%;
+  padding: 3px 11px;
+  background: var(--amarillo);
+  color: #0D0D0D;
+  border: 2px solid #0D0D0D;
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #0D0D0D;
+  font-family: var(--font-display);
+  font-size: 12px; letter-spacing: .04em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.perfil-cabecera.bajo-banner {
+  border-radius: 0 0 var(--radius) var(--radius);
+  border-top: none;
+  margin-bottom: 0;
+  padding-top: .9rem;
+}
+/* El avatar se monta sobre la banda. Necesita z-index propio: las capas
+   del banner lo tapaban por la mitad. */
+.perfil-cabecera.bajo-banner .avatar {
+  position: relative;
+  z-index: 3;
+  margin-top: -54px;
+  border-width: 4px;
+  box-shadow: 3px 3px 0 var(--border), 0 5px 20px rgba(0,0,0,.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FONDO DE PÁGINA DEL PERFIL
+   Un único póster estirado a pantalla completa queda borroso y sin
+   gracia. En mosaico se lee como papel pintado: se reconoce la serie,
+   se repite el motivo y encaja con la estética de tebeo.
+   ═══════════════════════════════════════════════════════════════════════ */
+.perfil-fondo {
+  position: fixed; inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--tapiz);
+  background-repeat: repeat;
+  background-position: center top;
+}
+/* Velo del color de la serie + fondo del tema: garantiza que el texto
+   siga legible sea cual sea el póster elegido. */
+.perfil-fondo::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--tinte) 34%, transparent),
+      transparent 60%),
+    var(--bg);
+}
+
+.perfil-fondo.intensidad-1 { background-size: 74px auto; }
+.perfil-fondo.intensidad-2 { background-size: 104px auto; }
+.perfil-fondo.intensidad-3 { background-size: 148px auto; }
+
+.perfil-fondo.intensidad-1::after { opacity: .945; }
+.perfil-fondo.intensidad-2::after { opacity: .905; }
+.perfil-fondo.intensidad-3::after { opacity: .845; }
+
+/* De noche los pósters son claros y el texto cálido pierde contraste:
+   hace falta más velo. */
+[data-theme="dark"] .perfil-fondo.intensidad-1::after { opacity: .955; }
+[data-theme="dark"] .perfil-fondo.intensidad-2::after { opacity: .925; }
+[data-theme="dark"] .perfil-fondo.intensidad-3::after { opacity: .875; }
+
+/* Selector de intensidad */
+.pers-intensidad { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.pers-serie-tebeo {
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, var(--dots) 1.5px, transparent 1.5px);
+  background-size: 9px 9px;
+}
+
+@media (max-width: 620px) {
+  .perfil-banner { height: 104px; }
+  .perfil-cabecera.bajo-banner .avatar { margin-top: -44px; }
+  .banner-etiqueta { font-size: 11px; top: 8px; right: 8px; }
 }
