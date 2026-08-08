@@ -12,13 +12,15 @@ import { calcularInsignias } from "../lib/insignias";
 import { supabase } from "../lib/supabase";
 import { poster as posterTam } from "../lib/series";
 const MisListas    = lazy(() => import("./Listas.jsx").then(m => ({ default: m.MisListas })));
-const Personalizar = lazy(() => import("./Personalizar.jsx"));
+const Personalizar  = lazy(() => import("./Personalizar.jsx"));
+const EditarPerfil  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.EditarPerfil })));
+const BorrarCuenta  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 
 function Skeleton({ width = "100%", height = 20, style = {} }) {
   return <div className="skeleton" style={{ width, height, ...style }} />;
 }
 
-export default function PerfilPublico({ user, series, onShowAuth }) {
+export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdate }) {
   const { username } = useParams();
   const navigate = useNavigate();
 
@@ -32,6 +34,7 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
   const [pestana, setPestana]     = useState("vistas");
   const [porDecada, setPorDecada] = useState([]);
   const [personalizando, setPers] = useState(false);
+  const [gestion, setGestion]     = useState(null);   // null | "editar" | "cuenta"
 
   const esMiPerfil = user?.profile?.username?.toLowerCase() === username?.toLowerCase();
 
@@ -172,9 +175,10 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
               <>
                 <button className="btn btn-secondary" style={{ fontSize: 12, padding: "6px 14px" }}
                         onClick={() => setPers(true)}>🎨 Personalizar</button>
-                <Link className="btn btn-ghost" to="/perfil" style={{ fontSize: 12, padding: "6px 14px" }}>
-                  ✏️ Editar datos
-                </Link>
+                <button className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 14px" }}
+                        onClick={() => setGestion("editar")}>✏️ Editar datos</button>
+                <button className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 14px" }}
+                        onClick={() => setGestion("cuenta")}>⚙️ Mi cuenta</button>
               </>
             ) : (
               <button
@@ -243,6 +247,33 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
           </div>
         ))}
       </div>
+
+      {/* ── Progreso por década ── */}
+      {porDecada.length > 0 && Number(perfil.vistas) > 0 && (
+        <div className="ranking" style={{ marginBottom: "1.4rem" }}>
+          <h2 className="font-display" style={{ fontSize: 18 }}>📊 Progreso por década</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 13 }}>
+            {["70s","80s","90s","00s"].map(d => {
+              const fila  = porDecada.find(x => x.decada === d);
+              const hecho = Number(fila?.vistas ?? 0);
+              const total = Number(fila?.total ?? 0);
+              if (total === 0) return null;
+              return (
+                <div key={d}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13,
+                                fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>
+                    <span>{d}</span>
+                    <span style={{ color: "var(--text-muted)" }}>{hecho}/{total}</span>
+                  </div>
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${(hecho / total) * 100}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Comparación ── */}
       {comparacion && comparacion.ambos.length + comparacion.soloOtro.length > 0 && (
@@ -359,13 +390,22 @@ export default function PerfilPublico({ user, series, onShowAuth }) {
         )
       )}
 
+      {gestion && (
+        <Suspense fallback={null}>
+          {gestion === "editar"
+            ? <EditarPerfil user={user} onClose={() => setGestion(null)}
+                            onSaved={() => { onProfileUpdate?.(); fetchPerfilPublico(username).then(setPerfil); }} />
+            : <BorrarCuenta user={user} onClose={() => setGestion(null)} />}
+        </Suspense>
+      )}
+
       {personalizando && (
         <Suspense fallback={null}>
           <Personalizar
             user={user}
             series={series}
             onClose={() => setPers(false)}
-            onSaved={() => fetchPerfilPublico(username).then(setPerfil)}
+            onSaved={() => { onProfileUpdate?.(); fetchPerfilPublico(username).then(setPerfil); }}
           />
         </Suspense>
       )}

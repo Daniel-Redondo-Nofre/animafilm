@@ -1,6 +1,6 @@
 // src/App.jsx — AnimaFilm v3 (diseño mejorado)
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
-import { Routes, Route, NavLink, useNavigate, useMatch, useLocation, useSearchParams, Link } from "react-router-dom";
+import { Routes, Route, NavLink, Navigate, useNavigate, useMatch, useLocation, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { fetchSeries, fetchSeriesStats, poster as posterTam } from "./lib/series";
 import { slugify, findBySlug } from "./lib/slug";
@@ -455,119 +455,30 @@ function Feed({ user, onShowAuth, series }) {
   );
 }
 
-function MiPerfil({ user, onShowAuth, series, onProfileUpdate }) {
-  const [modal, setModal] = useState(null);   // null | "editar" | "borrar"
-  const [stats, setStats] = useState({ vistas:0, ratings:0, reviews:0, avg:null });
-  const [vistas, setVistas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(()=>{
-    if(!user){ setLoading(false); return; }
-    (async()=>{
-      const [{ data:w },{ data:r },{ data:rev }]=await Promise.all([
-        supabase.from("watched").select("serie_id").eq("user_id",user.id),
-        supabase.from("ratings").select("rating").eq("user_id",user.id),
-        supabase.from("reviews").select("id").eq("user_id",user.id),
-      ]);
-      const ids=(w||[]).map(x=>x.serie_id);
-      const avg=r?.length?(r.reduce((a,b)=>a+b.rating,0)/r.length).toFixed(1):null;
-      setStats({ vistas:ids.length, ratings:r?.length||0, reviews:rev?.length||0, avg });
-      setVistas(series.filter(s=>ids.includes(s.id)));
-      setLoading(false);
-    })();
-  },[user, series]);
-  if(!user) return (
-    <div style={{ textAlign:"center", padding:"5rem 2rem" }} className="animate-fadeUp">
+// La página de perfil propio y la pública eran dos vistas distintas del
+// mismo usuario, con contenido diferente. Ahora hay una sola: /perfil
+// redirige a /u/tu-usuario, que muestra los apartados privados cuando
+// eres tú quien la visita.
+function MiPerfil({ user, onShowAuth }) {
+  if (!user) return (
+    <div className="empty-state page-enter">
       <div style={{ fontSize:72, marginBottom:16 }}>👤</div>
-      <p className="font-display" style={{ fontSize:26, color:"var(--accent)", marginBottom:12 }}>Tu perfil te espera</p>
-      <p style={{ color:"var(--text-muted)", fontSize:15, maxWidth:380, margin:"0 auto 1.5rem" }}>Guarda tu historial en la nube y accede desde cualquier dispositivo</p>
-      <button className="btn btn-primary" style={{ fontSize:15, padding:"12px 28px" }} onClick={onShowAuth}>Iniciar sesión</button>
+      <p className="font-display" style={{ fontSize:26, color:"var(--accent)", marginBottom:12 }}>
+        Tu perfil te espera
+      </p>
+      <p style={{ color:"var(--text-muted)", fontSize:15, maxWidth:380, margin:"0 auto 1.5rem", fontWeight:700 }}>
+        Guarda tu historial en la nube y accede desde cualquier dispositivo
+      </p>
+      <button className="btn btn-primary" style={{ fontSize:15, padding:"12px 28px" }} onClick={onShowAuth}>
+        Iniciar sesión
+      </button>
     </div>
   );
-  if(loading) return (
-    <div>
-      <div style={{ display:"flex", gap:16, marginBottom:"2rem", alignItems:"center" }}>
-        <Skeleton width={64} height={64} style={{ borderRadius:"50%" }}/>
-        <div style={{ flex:1 }}><Skeleton height={28} width="60%" style={{ marginBottom:8 }}/><Skeleton height={13} width="40%"/></div>
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:"2rem" }}>
-        {Array(4).fill(0).map((_,i)=><Skeleton key={i} height={100}/>)}
-      </div>
-    </div>
-  );
-  return (
-    <div className="page-enter">
-      <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:"2rem", background:"var(--bg-card)", border:"1.5px solid var(--border)", borderRadius:"var(--radius)", padding:"1.5rem" }}>
-        <Avatar perfil={user.profile} size={64}/>
-        <div>
-          <p className="font-display" style={{ fontSize:28, color:"var(--accent)" }}>{user.profile?.display_name||user.profile?.username}</p>
-          <p style={{ fontSize:13, color:"var(--text-muted)" }}>@{user.profile?.username} · desde {new Date(user.created_at).getFullYear()}</p>
-          {user.profile?.bio && (
-            <p style={{ fontSize:14, color:"var(--text-muted)", fontWeight:700, marginTop:8, lineHeight:1.6, maxWidth:520 }}>
-              {user.profile.bio}
-            </p>
-          )}
-          <div style={{ display:"flex", gap:8, marginTop:12, flexWrap:"wrap" }}>
-            <button className="btn btn-secondary" style={{ fontSize:12, padding:"6px 14px" }}
-                    onClick={()=>setModal("editar")}>✏️ Editar perfil</button>
-            <button className="btn btn-ghost" style={{ fontSize:12, padding:"6px 14px" }}
-                    onClick={()=>setModal("borrar")}>⚙️ Mi cuenta</button>
-          </div>
-        </div>
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", gap:14, marginBottom:"2rem" }}>
-        {[{ icon:"📺", value:stats.vistas, label:"Series vistas" },{ icon:"⭐", value:stats.avg??"—", label:"Nota media" },{ icon:"🎬", value:stats.ratings, label:"Valoradas" },{ icon:"💬", value:stats.reviews, label:"Reseñas" }].map((s,i)=>(
-          <div key={s.label} className={`stat-card animate-fadeUp delay-${i+1}`}>
-            <div style={{ fontSize:26, marginBottom:4 }}>{s.icon}</div>
-            <div className="font-display" style={{ fontSize:34, color:"var(--accent)", lineHeight:1 }}>{s.value}</div>
-            <div style={{ fontSize:12, color:"var(--text-muted)", fontWeight:700, marginTop:4 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-      {vistas.length>0&&(
-        <div style={{ background:"var(--bg-card)", border:"1.5px solid var(--border)", borderRadius:"var(--radius)", padding:"1.2rem 1.5rem", marginBottom:"2rem" }}>
-          <h3 className="font-display" style={{ fontSize:18, color:"var(--accent)", marginBottom:"1rem" }}>📊 Progreso por década</h3>
-          {["70s","80s","90s","00s"].map(d=>{
-            const count=vistas.filter(s=>s.decada===d).length;
-            const total=series.filter(s=>s.decada===d).length;
-            return (
-              <div key={d} style={{ marginBottom:12 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:700, color:"var(--text)", marginBottom:4 }}><span>{d}</span><span style={{ color:"var(--text-muted)" }}>{count}/{total}</span></div>
-                <div className="progress-track"><div className="progress-fill" style={{ width:`${total>0?(count/total)*100:0}%` }}/></div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {vistas.length>0&&(
-        <div>
-          <h3 className="font-display" style={{ fontSize:22, color:"var(--accent)", marginBottom:"1rem" }}>✅ Series vistas</h3>
-          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-            {vistas.map(s=>(
-              <div key={s.id} style={{ background:s.color, padding:"6px 14px", borderRadius:20, color:"#fff", fontWeight:700, fontSize:13, transition:"transform 0.15s", cursor:"default" }}
-                onMouseEnter={e=>e.currentTarget.style.transform="scale(1.05)"}
-                onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-              >{s.titulo}</div>
-            ))}
-          </div>
-        </div>
-      )}
-      {vistas.length===0&&<div style={{ textAlign:"center", padding:"3rem", color:"var(--text-muted)" }}><div style={{ fontSize:60, marginBottom:12 }}>📺</div><p className="font-display" style={{ fontSize:22, color:"var(--accent)" }}>¡Empieza tu historial!</p></div>}
 
-      <Suspense fallback={null}>
-        <h3 className="font-display" style={{ fontSize:22, color:"var(--accent)", marginTop:"2rem" }}>📋 Mis listas</h3>
-      <Suspense fallback={<div className="skeleton" style={{ height:80, marginTop:"1rem" }}/>}>
-        <MisListas user={user} propias />
-      </Suspense>
+  // El perfil puede tardar un instante en llegar tras iniciar sesión
+  if (!user.profile?.username) return <div className="skeleton" style={{ height:200 }} />;
 
-      {modal==="editar" && (
-          <EditarPerfil user={user} onClose={()=>setModal(null)} onSaved={onProfileUpdate} />
-        )}
-        {modal==="borrar" && (
-          <BorrarCuenta user={user} onClose={()=>setModal(null)} />
-        )}
-      </Suspense>
-    </div>
-  );
+  return <Navigate to={`/u/${user.profile.username}`} replace />;
 }
 
 function NoEncontrado() {
@@ -1013,8 +924,8 @@ export default function App() {
           <Route path="/"             element={catalogo} />
           <Route path="/serie/:slug"  element={catalogo} />
           <Route path="/comunidad"    element={<Feed user={user} series={series} onShowAuth={pedirLogin}/>} />
-          <Route path="/perfil"       element={<MiPerfil user={user} series={series} onShowAuth={pedirLogin} onProfileUpdate={refreshProfile}/>} />
-          <Route path="/u/:username"  element={<PerfilPublico user={user} series={series} onShowAuth={pedirLogin}/>} />
+          <Route path="/perfil"       element={<MiPerfil user={user} onShowAuth={pedirLogin}/>} />
+          <Route path="/u/:username"  element={<PerfilPublico user={user} series={series} onShowAuth={pedirLogin} onProfileUpdate={refreshProfile}/>} />
           <Route path="/lista/:id"    element={<DetalleLista user={user} series={series}/>} />
           <Route path="/estadisticas" element={<Estadisticas/>} />
           <Route path="*"             element={<NoEncontrado/>} />
