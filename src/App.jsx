@@ -17,6 +17,7 @@ const AnadirALista  = lazy(() => import("./components/Listas.jsx").then(m => ({ 
 const MisListas     = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.MisListas })));
 import { useModal } from "./lib/useModal";
 import { Toasts, toast, mensajeDeError } from "./lib/toast.jsx";
+import { avisar, useCambios, CAMBIO } from "./lib/eventos";
 import { useThemeToggle } from "./lib/useThemeToggle.js";
 // Estos componentes solo aparecen al pulsar algo: no deben pesar
 // en la descarga inicial.
@@ -187,6 +188,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
     setEditing(false);
     toast.ok("Reseña publicada");
     recargarReseñas();
+    avisar(CAMBIO.RESENA, { serie: serie.id });
   }
 
   async function deleteReview(){
@@ -201,6 +203,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
     setMyReview("");
     toast.ok("Reseña eliminada");
     recargarReseñas();
+    avisar(CAMBIO.RESENA, { serie: serie.id });
   }
 
   return (
@@ -345,7 +348,7 @@ function Feed({ user, onShowAuth, series }) {
   useEffect(()=>{
     if(!user){ setSeguidos([]); return; }
     fetchSeguidos(user.id).then(setSeguidos).catch(()=>setSeguidos([]));
-  },[user]);
+  },[user, recarga]);
 
   // Búsqueda de usuarios, con retardo para no consultar en cada tecla
   useEffect(()=>{
@@ -353,6 +356,13 @@ function Feed({ user, onShowAuth, series }) {
     const t = setTimeout(()=>{ buscarUsuarios(busca).then(setHallados); }, 320);
     return ()=>clearTimeout(t);
   },[busca]);
+
+  const [recarga, setRecarga] = useState(0);
+  // Cualquier actividad de la comunidad afecta al feed
+  useCambios(
+    [CAMBIO.ACTIVIDAD, CAMBIO.RESENA, CAMBIO.SEGUIMIENTO, CAMBIO.PERFIL],
+    useCallback(()=>setRecarga(n=>n+1), [])
+  );
 
   useEffect(()=>{
     if(ambito==="siguiendo" && seguidos===null) return;
@@ -377,7 +387,7 @@ function Feed({ user, onShowAuth, series }) {
       ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,50);
       setItems(all); setLoading(false);
     })();
-  },[ambito, seguidos]);
+  },[ambito, seguidos, recarga]);
   const getSerie=id=>series.find(s=>s.id===id);
   if(!user) return (
     <div style={{ textAlign:"center", padding:"5rem 2rem" }} className="animate-fadeUp">
@@ -638,7 +648,12 @@ export default function App() {
     setTimeout(()=>setCatalogLoaded(true), 1500); // red de seguridad
   },[]);
 
-  const user=session?{...session.user,profile}:null;
+  // Sin useMemo este objeto se recreaba en cada render, y los efectos
+  // que dependen de `user` volvían a consultar sin motivo.
+  const user = useMemo(
+    () => session ? { ...session.user, profile } : null,
+    [session, profile]
+  );
 
   // ── ESCRITURAS OPTIMISTAS CON REVERSIÓN ──────────────────────────────
   // El patrón: aplicamos el cambio en pantalla al instante (la interfaz
@@ -674,6 +689,8 @@ export default function App() {
     if(!eraVista && eraPendiente){
       await supabase.from("watchlist").delete().eq("user_id",uid).eq("serie_id",id);
     }
+
+    avisar(CAMBIO.ACTIVIDAD, { serie: id });
   },[session,vistas,pendientes,pedirLogin]);
 
   const togglePendiente=useCallback(async(id)=>{
@@ -690,7 +707,9 @@ export default function App() {
     if(error){
       setPendientes(p=>({...p,[id]:antes}));
       toast.error(mensajeDeError(error));
+      return;
     }
+    avisar(CAMBIO.ACTIVIDAD, { serie: id });
   },[session,pendientes,pedirLogin]);
 
   const setRating=useCallback(async(id,r)=>{
@@ -712,6 +731,7 @@ export default function App() {
 
     // La nota de la comunidad ha cambiado: la refrescamos sin bloquear
     fetchSeriesStats().then(setStats).catch(()=>{});
+    avisar(CAMBIO.ACTIVIDAD, { serie: id });
   },[session,ratings,pedirLogin]);
 
   // Los géneros salen del propio catálogo: si añades una serie con un

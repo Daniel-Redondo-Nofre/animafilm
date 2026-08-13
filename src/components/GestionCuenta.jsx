@@ -59,6 +59,7 @@ export function EditarPerfil({ user, onClose, onSaved }) {
       );
       return;
     }
+    avisar(CAMBIO.PERFIL);
     onSaved?.();
     onClose();
   }

@@ -1,8 +1,9 @@
 // src/components/Estadisticas.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { fetchEstadisticas } from "../lib/listas";
 import { slugify } from "../lib/slug";
+import { useCambios, CAMBIO } from "../lib/eventos";
 
 function Skeleton({ height = 20, width = "100%" }) {
   return <div className="skeleton" style={{ height, width }} />;
@@ -49,10 +50,17 @@ export default function Estadisticas() {
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    document.title = "Estadísticas — AnimaFilm";
+  const cargar = useCallback(() => {
     fetchEstadisticas().then(setDatos).catch(() => setError(true));
   }, []);
+
+  useEffect(() => {
+    document.title = "Estadísticas — AnimaFilm";
+    cargar();
+  }, [cargar]);
+
+  // Los rankings dependen de lo que vote la comunidad
+  useCambios([CAMBIO.ACTIVIDAD, CAMBIO.RESENA], cargar);
 
   if (error) return (
     <div className="empty-state page-enter">

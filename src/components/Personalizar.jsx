@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import { useModal } from "../lib/useModal";
 import { toast } from "../lib/toast.jsx";
+import { avisar, CAMBIO } from "../lib/eventos";
 import Portal from "./Portal.jsx";
 import Avatar, { EMOJIS_AVATAR, COLORES_AVATAR, colorPorNombre } from "./Avatar.jsx";
 import { poster as posterTam } from "../lib/series";
@@ -51,6 +52,7 @@ export default function Personalizar({ user, series, onClose, onSaved }) {
 
     if (error) { toast.error(error.message || "No hemos podido guardar."); return; }
     toast.ok("Perfil actualizado");
+    avisar(CAMBIO.PERFIL);
     onSaved?.();
     onClose();
   }

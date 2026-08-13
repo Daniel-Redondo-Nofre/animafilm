@@ -11,6 +11,7 @@ import { slugify } from "../lib/slug";
 import { poster as posterTam } from "../lib/series";
 import { useModal } from "../lib/useModal";
 import { toast } from "../lib/toast.jsx";
+import { avisar, useCambios, CAMBIO } from "../lib/eventos";
 import Portal from "./Portal.jsx";
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -41,6 +42,7 @@ export function AnadirALista({ user, serie, onClose }) {
     setDentro(p => estaba ? p.filter(x => x !== listaId) : [...p, listaId]);   // optimista
     try {
       estaba ? await quitarSerie(listaId, serie.id) : await anadirSerie(listaId, serie.id);
+      avisar(CAMBIO.LISTAS);
     } catch (e) {
       setDentro(p => estaba ? [...p, listaId] : p.filter(x => x !== listaId)); // reversión
       toast.error(e.message || "No hemos podido actualizar la lista.");
@@ -57,6 +59,7 @@ export function AnadirALista({ user, serie, onClose }) {
       setNueva("");
       await recargar();
       toast.ok(`Añadida a "${nombre}"`);
+      avisar(CAMBIO.LISTAS);
     } catch (e) {
       toast.error(e.message || "No hemos podido crear la lista.");
     } finally {
@@ -151,6 +154,7 @@ export function MisListas({ user, propias = true, userId }) {
   }, [objetivo, propias]);
 
   useEffect(recargar, [recargar]);
+  useCambios([CAMBIO.LISTAS], recargar);
 
   async function crear() {
     const n = nombre.trim();
@@ -160,6 +164,7 @@ export function MisListas({ user, propias = true, userId }) {
       setNombre(""); setCreando(false);
       recargar();
       toast.ok("Lista creada");
+      avisar(CAMBIO.LISTAS);
     } catch (e) {
       toast.error(e.message || "No hemos podido crear la lista.");
     }

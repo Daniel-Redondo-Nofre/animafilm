@@ -7,6 +7,7 @@ import {
 } from "../lib/social";
 import { slugify } from "../lib/slug";
 import { toast } from "../lib/toast.jsx";
+import { avisar, useCambios, CAMBIO } from "../lib/eventos";
 import Avatar from "./Avatar.jsx";
 import { calcularInsignias } from "../lib/insignias";
 import { supabase } from "../lib/supabase";
@@ -35,6 +36,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
   const [porDecada, setPorDecada] = useState([]);
   const [personalizando, setPers] = useState(false);
   const [gestion, setGestion]     = useState(null);   // null | "editar" | "cuenta"
+  const [recarga, setRecarga]     = useState(0);
 
   const esMiPerfil = user?.profile?.username?.toLowerCase() === username?.toLowerCase();
 
@@ -79,7 +81,14 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
     })();
 
     return () => { vivo = false; };
-  }, [username, user]);
+  }, [username, user, recarga]);
+
+  // Valorar una serie, escribir una reseña o cambiar el avatar altera
+  // lo que muestra esta página. Sin esto había que recargar a mano.
+  useCambios(
+    [CAMBIO.ACTIVIDAD, CAMBIO.RESENA, CAMBIO.PERFIL, CAMBIO.SEGUIMIENTO],
+    useCallback(() => setRecarga(n => n + 1), [])
+  );
 
   const alternarSeguir = useCallback(async () => {
     if (!user) { onShowAuth?.(); return; }
@@ -91,6 +100,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
     try {
       antes ? await dejarDeSeguir(perfil.id) : await seguir(perfil.id);
       setPerfil(p => ({ ...p, seguidores: Number(p.seguidores) + (antes ? -1 : 1) }));
+      avisar(CAMBIO.SEGUIMIENTO, { usuario: perfil.id });
     } catch (e) {
       setSiguiendo(antes);           // reversión
       toast.error(e.message || "No hemos podido completar la acción.");
@@ -384,7 +394,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
         <Suspense fallback={null}>
           {gestion === "editar"
             ? <EditarPerfil user={user} onClose={() => setGestion(null)}
-                            onSaved={() => { onProfileUpdate?.(); fetchPerfilPublico(username).then(setPerfil); }} />
+                            onSaved={() => { onProfileUpdate?.(); avisar(CAMBIO.PERFIL); }} />
             : <BorrarCuenta user={user} onClose={() => setGestion(null)} />}
         </Suspense>
       )}
@@ -395,7 +405,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
             user={user}
             series={series}
             onClose={() => setPers(false)}
-            onSaved={() => { onProfileUpdate?.(); fetchPerfilPublico(username).then(setPerfil); }}
+            onSaved={() => { onProfileUpdate?.(); avisar(CAMBIO.PERFIL); }}
           />
         </Suspense>
       )}
