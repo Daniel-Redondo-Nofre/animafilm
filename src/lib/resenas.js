@@ -38,3 +38,37 @@ export async function quitarLike(reviewId, userId) {
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
 }
+
+// ── COMENTARIOS ───────────────────────────────────────────────────────
+
+export async function fetchComentarios(reviewId) {
+  const { data, error } = await supabase.rpc("comentarios_de", { p_review: reviewId });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function comentar(reviewId, userId, texto) {
+  const content = texto.trim();
+  if (!content) throw new Error("El comentario está vacío.");
+  if (content.length > 600) throw new Error("El comentario no puede pasar de 600 caracteres.");
+
+  const { data, error } = await supabase
+    .from("review_comments")
+    .insert({ review_id: reviewId, user_id: userId, content })
+    .select()
+    .single();
+  if (error) throw new Error(traducirComentario(error));
+  return data;
+}
+
+export async function borrarComentario(id) {
+  const { error } = await supabase.from("review_comments").delete().eq("id", id);
+  if (error) throw new Error(traducirComentario(error));
+}
+
+function traducirComentario(error) {
+  const m = (error?.message || "").toLowerCase();
+  if (m.includes("demasiado en poco tiempo")) return "Has comentado demasiado seguido. Espera un rato.";
+  if (m.includes("comentario_len"))           return "El comentario debe tener entre 1 y 600 caracteres.";
+  return error?.message || "No hemos podido publicar el comentario.";
+}

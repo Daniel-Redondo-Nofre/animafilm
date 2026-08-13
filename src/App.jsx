@@ -18,6 +18,7 @@ const DetalleLista  = lazy(() => import("./components/Listas.jsx"));
 const Estadisticas  = lazy(() => import("./components/Estadisticas.jsx"));
 const AnadirALista  = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.AnadirALista })));
 const ApuntarVisionado = lazy(() => import("./components/Diario.jsx").then(m => ({ default: m.ApuntarVisionado })));
+const Comentarios      = lazy(() => import("./components/Comentarios.jsx"));
 const MisListas     = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.MisListas })));
 import { useModal } from "./lib/useModal";
 import { Toasts, toast, mensajeDeError } from "./lib/toast.jsx";
@@ -153,6 +154,8 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   // Reseñas desplegadas: por defecto las largas van recortadas para
   // que se vean varias de un vistazo.
   const [abiertas, setAbiertas] = useState(() => new Set());
+  // Hilos de comentarios desplegados
+  const [hilos, setHilos] = useState(() => new Set());
 
   async function alternarLike(r){
     if(!user){ onShowAuth?.(); return; }
@@ -390,7 +393,35 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                   </svg>
                   <span className="like-num">{Number(r.likes) > 0 ? r.likes : "Me gusta"}</span>
                 </button>
+
+                <button
+                  className={`comentar-btn${hilos.has(r.id) ? " activo" : ""}`}
+                  onClick={()=>setHilos(prev=>{
+                    const n = new Set(prev);
+                    n.has(r.id) ? n.delete(r.id) : n.add(r.id);
+                    return n;
+                  })}
+                  aria-expanded={hilos.has(r.id)}
+                >
+                  <span aria-hidden="true">💬</span>
+                  {Number(r.comentarios) > 0
+                    ? `${r.comentarios} ${Number(r.comentarios) === 1 ? "respuesta" : "respuestas"}`
+                    : "Responder"}
+                </button>
                 </div>
+
+                {hilos.has(r.id) && (
+                  <Suspense fallback={<div className="skeleton" style={{ height:44, marginTop:10 }}/>}>
+                    <Comentarios
+                      reviewId={r.id}
+                      autorResena={r.user_id}
+                      user={user}
+                      onShowAuth={onShowAuth}
+                      onCambio={(delta)=>setReviews(prev=>prev.map(x=>
+                        x.id === r.id ? { ...x, comentarios: Number(x.comentarios||0) + delta } : x))}
+                    />
+                  </Suspense>
+                )}
               </div>
             ))
           }

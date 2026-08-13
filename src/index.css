@@ -2246,3 +2246,119 @@ body > * { position: relative; z-index: 1; }
   background-size: 600px 100%;
   border: 2px solid color-mix(in srgb, var(--border) 45%, transparent);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COMENTARIOS EN RESEÑAS
+   Hilo plano de un solo nivel: con anidamiento libre, en móvil las
+   respuestas acaban en una columna de veinte píxeles.
+   ═══════════════════════════════════════════════════════════════════════ */
+.comentar-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 800; font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform .18s cubic-bezier(.2,.9,.3,1),
+              box-shadow .18s cubic-bezier(.2,.9,.3,1),
+              border-color .18s ease, color .18s ease;
+}
+.comentar-btn:hover {
+  transform: translate(-1px,-2px);
+  border-color: var(--accent2);
+  color: var(--accent2);
+  box-shadow: 3px 3px 0 var(--accent2);
+}
+.comentar-btn:active { transform: translate(2px,2px); box-shadow: none; }
+.comentar-btn.activo {
+  background: color-mix(in srgb, var(--accent2) 12%, var(--bg-card));
+  border-color: var(--accent2);
+  color: var(--accent2);
+  box-shadow: 2px 2px 0 var(--accent2);
+}
+
+/* ── El hilo ── */
+.comentarios {
+  margin-top: 12px;
+  padding-left: 14px;
+  /* Línea de continuidad: ata visualmente el hilo a su reseña */
+  border-left: 3px solid var(--border);
+  animation: fadeUp .25s cubic-bezier(.22,1,.36,1) both;
+}
+
+.comentario {
+  display: flex; gap: 9px;
+  padding: 8px 0;
+  border-bottom: 2px dotted color-mix(in srgb, var(--border) 45%, transparent);
+}
+.comentario:last-of-type { border-bottom: none; }
+
+.comentario-cuerpo { flex: 1; min-width: 0; }
+.comentario-cabecera {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+.comentario-cabecera strong { font-size: 12.5px; color: var(--text); }
+.comentario-fecha {
+  font-size: 11px; color: var(--text-faint); font-weight: 700;
+}
+.comentario-autor {
+  font-size: 9px; padding: 1px 8px;
+  background: var(--accent); color: var(--accent-fg);
+  border-color: var(--border);
+  box-shadow: 1px 1px 0 var(--border);
+}
+.comentario-texto {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6; font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.comentario-borrar {
+  flex-shrink: 0;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint); font-size: 12px;
+  padding: 2px 6px; border-radius: 4px;
+  opacity: 0;
+  transition: opacity .15s ease, background-color .15s ease, color .15s ease;
+}
+/* El botón de borrar aparece al acercarse, no compite con el texto */
+.comentario:hover .comentario-borrar,
+.comentario-borrar:focus-visible { opacity: 1; }
+.comentario-borrar:hover { background: var(--rojo); color: #fff; }
+
+/* ── Caja de respuesta ── */
+.comentario-nuevo {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin-top: 11px;
+}
+.comentario-campo {
+  flex: 1;
+  min-height: 42px;
+  font-size: 13px;
+  padding: 9px 12px;
+}
+.comentario-enviar {
+  flex-shrink: 0;
+  font-size: 12px; padding: 9px 16px;
+  align-self: stretch;
+}
+.comentario-invitacion {
+  font-size: 12.5px; color: var(--text-faint); font-weight: 700;
+  padding: 10px 0;
+}
+.comentario-invitacion button {
+  background: none; border: none; padding: 0;
+  color: var(--accent); font-family: inherit;
+  font-weight: 800; font-size: inherit;
+  cursor: pointer; text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 620px) {
+  .comentarios { padding-left: 10px; }
+  .comentario-borrar { opacity: 1; }   /* sin hover en táctil */
+}
