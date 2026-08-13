@@ -29,14 +29,12 @@ alter table public.profiles drop constraint if exists profiles_color_fmt;
 alter table public.profiles add  constraint profiles_color_fmt
   check (avatar_color is null or avatar_color ~ '^#[0-9A-Fa-f]{6}$');
 
--- Como mucho cuatro favoritas, y sin repetir
+-- Como mucho cuatro favoritas.
+-- Un CHECK no puede llevar subconsultas (Postgres lo prohíbe), así que
+-- la comprobación de duplicados va en el trigger de más abajo.
 alter table public.profiles drop constraint if exists profiles_favoritas_max;
 alter table public.profiles add  constraint profiles_favoritas_max
-  check (
-    array_length(favoritas, 1) is null
-    or (array_length(favoritas, 1) <= 4
-        and array_length(favoritas, 1) = (select count(distinct x) from unnest(favoritas) x))
-  );
+  check (favoritas is null or coalesce(array_length(favoritas, 1), 0) <= 4);
 
 alter table public.profiles drop constraint if exists profiles_portada_fk;
 alter table public.profiles add  constraint profiles_portada_fk
@@ -72,13 +70,19 @@ begin
     raise exception 'La biografía no puede pasar de 300 caracteres.';
   end if;
 
-  -- Las favoritas deben existir en el catálogo
-  if array_length(new.favoritas, 1) > 0
-     and exists (
-       select 1 from unnest(new.favoritas) f
-       where not exists (select 1 from public.series s where s.id = f)
-     ) then
-    raise exception 'Alguna de las series favoritas no existe.';
+  -- Las favoritas deben existir en el catálogo y no repetirse.
+  -- Aquí sí podemos usar subconsultas: en un CHECK no estaría permitido.
+  if coalesce(array_length(new.favoritas, 1), 0) > 0 then
+    if exists (
+      select 1 from unnest(new.favoritas) f
+      where not exists (select 1 from public.series s where s.id = f)
+    ) then
+      raise exception 'Alguna de las series favoritas no existe.';
+    end if;
+
+    if array_length(new.favoritas, 1) <> (select count(distinct f) from unnest(new.favoritas) f) then
+      raise exception 'No puedes repetir la misma serie en tus favoritas.';
+    end if;
   end if;
 
   if TG_OP = 'UPDATE' and new.id <> old.id then
@@ -97,8 +101,15 @@ create trigger profiles_validar
 
 -- ───────────────────────────────────────────────────────────────────────
 -- 3. LA VISTA PÚBLICA DEBE EXPONER LO NUEVO
+--
+--    `create or replace view` solo sabe AÑADIR columnas al final: no
+--    puede insertarlas en medio ni reordenarlas. Como los campos nuevos
+--    van tras created_at, hay que borrar la vista y rehacerla.
+--    Nada depende de ella salvo el cliente, así que es seguro.
 -- ───────────────────────────────────────────────────────────────────────
-create or replace view public.perfiles_publicos as
+drop view if exists public.perfiles_publicos;
+
+create view public.perfiles_publicos as
 select
   p.id,
   p.username,
@@ -128,6 +139,8 @@ grant select on public.perfiles_publicos to anon, authenticated;
 -- 4. VISTAS POR DÉCADA DE UN USUARIO
 --    Lo necesitan las insignias de "década completada".
 -- ───────────────────────────────────────────────────────────────────────
+drop function if exists public.vistas_por_decada(uuid);
+
 create or replace function public.vistas_por_decada(usuario uuid)
 returns table (decada text, vistas bigint, total bigint)
 language sql

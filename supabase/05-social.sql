@@ -92,6 +92,8 @@ grant execute on function public.dejar_de_seguir(uuid) to authenticated;
 --    Devuelve qué series habéis visto los dos, cuáles solo uno, y en qué
 --    medida coincidís puntuando. Todo en una consulta.
 -- ───────────────────────────────────────────────────────────────────────
+drop function if exists public.comparar_con(uuid);
+
 create or replace function public.comparar_con(otro uuid)
 returns table (
   serie_id      integer,
@@ -125,6 +127,8 @@ grant execute on function public.comparar_con(uuid) to authenticated;
 --    Devuelve como mucho 10 resultados y exige al menos 2 caracteres:
 --    así no se puede volcar la lista completa de usuarios.
 -- ───────────────────────────────────────────────────────────────────────
+drop function if exists public.buscar_usuarios(text);
+
 create or replace function public.buscar_usuarios(texto text)
 returns table (id uuid, username text, display_name text, vistas bigint)
 language sql

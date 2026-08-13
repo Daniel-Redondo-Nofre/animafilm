@@ -166,6 +166,8 @@ grant select on public.stats_por_decada to anon, authenticated;
 
 -- Ranking: mejor valoradas, con un mínimo de votos para que una serie
 -- con un solo 5 no se coloque por delante de una con cincuenta cuatros.
+drop function if exists public.top_series(text, integer);
+
 create or replace function public.top_series(criterio text default 'nota', limite integer default 10)
 returns table (
   serie_id integer,

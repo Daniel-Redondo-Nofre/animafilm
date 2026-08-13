@@ -126,6 +126,11 @@ grant execute on function public.comentarios_de(bigint) to anon, authenticated;
 -- 4. LAS RESEÑAS DEVUELVEN SU RECUENTO DE COMENTARIOS
 --    Así se puede mostrar "3 comentarios" sin consultar uno por uno.
 -- ───────────────────────────────────────────────────────────────────────
+-- Cambia el tipo de retorno (añade la columna `comentarios`), así que
+-- Postgres exige borrarla antes: `create or replace` no puede alterar
+-- las columnas que devuelve una función existente.
+drop function if exists public.resenas_de_serie(integer, text, integer);
+
 create or replace function public.resenas_de_serie(
   p_serie  integer,
   p_orden  text default 'populares',

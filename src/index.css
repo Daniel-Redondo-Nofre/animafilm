@@ -1933,7 +1933,6 @@ body > * { position: relative; z-index: 1; }
    ═══════════════════════════════════════════════════════════════════════ */
 .like-btn {
   display: inline-flex; align-items: center; gap: 7px;
-  margin-top: 12px;
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   border: 2px solid var(--border);
@@ -2220,7 +2219,21 @@ body > * { position: relative; z-index: 1; }
 }
 
 /* Fila de acciones de una reseña */
-.resena-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.resena-acciones {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  align-items: stretch;   /* misma altura en ambos botones */
+  margin-top: 12px;
+}
+/* Los dos botones comparten geometría exacta: antes uno llevaba el
+   margen superior en su propia regla y el otro no, y quedaban a
+   distinta altura. */
+.resena-acciones .like-btn,
+.resena-acciones .comentar-btn {
+  margin-top: 0;
+  min-height: 32px;
+  padding: 6px 14px;
+  display: inline-flex; align-items: center; gap: 7px;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    TRANSICIÓN ENTRE PÁGINAS
@@ -2284,9 +2297,10 @@ body > * { position: relative; z-index: 1; }
 /* ── El hilo ── */
 .comentarios {
   margin-top: 12px;
-  padding-left: 14px;
-  /* Línea de continuidad: ata visualmente el hilo a su reseña */
-  border-left: 3px solid var(--border);
+  padding-top: 10px;
+  /* La reseña ya tiene su propio borde: una línea vertical más solo
+     añadía ruido. Un filete horizontal separa igual de bien. */
+  border-top: 2px dotted color-mix(in srgb, var(--border) 50%, transparent);
   animation: fadeUp .25s cubic-bezier(.22,1,.36,1) both;
 }
 
@@ -2332,19 +2346,25 @@ body > * { position: relative; z-index: 1; }
 
 /* ── Caja de respuesta ── */
 .comentario-nuevo {
-  display: flex; gap: 8px; align-items: flex-start;
-  margin-top: 11px;
+  display: flex; gap: 9px;
+  /* Centrado: con flex-start el avatar quedaba pegado al borde superior
+     del campo en lugar de a su eje. */
+  align-items: center;
+  margin-top: 14px;
 }
+.comentario-nuevo .avatar { align-self: center; }
 .comentario-campo {
   flex: 1;
-  min-height: 42px;
+  min-height: 40px;
   font-size: 13px;
-  padding: 9px 12px;
+  padding: 10px 13px;
+  resize: none;
 }
 .comentario-enviar {
   flex-shrink: 0;
-  font-size: 12px; padding: 9px 16px;
-  align-self: stretch;
+  font-size: 12px;
+  padding: 10px 18px;
+  min-height: 40px;
 }
 .comentario-invitacion {
   font-size: 12.5px; color: var(--text-faint); font-weight: 700;
@@ -2361,4 +2381,139 @@ body > * { position: relative; z-index: 1; }
 @media (max-width: 620px) {
   .comentarios { padding-left: 10px; }
   .comentario-borrar { opacity: 1; }   /* sin hover en táctil */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REPARTO DE NOTAS
+   ═══════════════════════════════════════════════════════════════════════ */
+.distribucion {
+  background: var(--bg-muted);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sh-btn);
+  padding: 13px 15px 10px;
+  margin-bottom: 1.2rem;
+}
+.dist-resumen { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; }
+.dist-nota {
+  font-size: 34px; color: var(--accent); line-height: 1;
+}
+.dist-detalle { display: flex; flex-direction: column; gap: 1px; }
+.dist-detalle strong {
+  font-family: var(--font-display); font-size: 14px;
+  color: var(--text); letter-spacing: .04em;
+}
+.dist-detalle em {
+  font-style: normal; font-size: 11px;
+  color: var(--text-muted); font-weight: 700;
+}
+
+.dist-barras {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  height: 74px;
+  align-items: end;
+}
+.dist-col {
+  display: flex; flex-direction: column; align-items: center;
+  height: 100%; gap: 3px;
+}
+.dist-valor {
+  font-size: 9px; font-weight: 800; color: var(--text-faint);
+  height: 11px; line-height: 1;
+}
+.dist-barra-hueco {
+  flex: 1; width: 100%;
+  display: flex; align-items: flex-end;
+  /* Fondo tenue: se ve dónde estarían las barras vacías */
+  background: color-mix(in srgb, var(--border) 10%, transparent);
+  border-radius: 2px;
+}
+.dist-barra {
+  width: 100%;
+  min-height: 2px;
+  background: var(--amarillo);
+  border: 1.5px solid var(--border);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  transition: height .5s cubic-bezier(.22,1,.36,1);
+}
+.dist-col:hover .dist-barra { background: var(--accent); }
+.dist-eje {
+  display: flex; justify-content: space-between;
+  margin-top: 5px;
+  font-size: 10px; color: var(--text-faint); font-weight: 800;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SPOILERS
+   ═══════════════════════════════════════════════════════════════════════ */
+.spoiler-check {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 9px;
+  font-size: 12px; font-weight: 800;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.spoiler-check input {
+  width: 17px; height: 17px;
+  accent-color: var(--accent2);
+  cursor: pointer;
+}
+
+.spoiler-chip {
+  display: inline-block;
+  margin-bottom: 7px;
+  font-size: 9px; padding: 1px 8px;
+  background: var(--accent2); color: var(--accent2-fg);
+  box-shadow: 1px 1px 0 var(--border);
+}
+
+/* La tapa cubre el texto entero: revelar a medias no sirve de nada */
+.spoiler-tapa {
+  display: flex; align-items: center; gap: 11px;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-muted);
+  border: var(--border-w) dashed var(--accent2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--t-fast), transform .18s cubic-bezier(.2,.9,.3,1);
+}
+.spoiler-tapa:hover {
+  background: color-mix(in srgb, var(--accent2) 10%, var(--bg-muted));
+  transform: translateY(-2px);
+}
+.spoiler-icono { font-size: 22px; flex-shrink: 0; }
+.spoiler-tapa strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 14px; color: var(--text); letter-spacing: .04em;
+}
+.spoiler-tapa em {
+  display: block; font-style: normal;
+  font-size: 11.5px; color: var(--text-muted); font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AGRUPACIÓN DE RESEÑAS
+   ═══════════════════════════════════════════════════════════════════════ */
+.resenas-grupo {
+  font-family: var(--font-display);
+  font-size: 13px; letter-spacing: .06em;
+  color: var(--text-muted);
+  margin: 4px 0 9px;
+  padding-bottom: 5px;
+  border-bottom: 2px dotted var(--border);
+}
+.resenas-seguidos { margin-bottom: 1.2rem; }
+/* Las de quienes sigues se distinguen sin gritar */
+.resenas-seguidos .review-card { border-color: var(--accent2); }
+
+@media (max-width: 620px) {
+  .dist-barras { height: 60px; }
+  .dist-nota   { font-size: 28px; }
+  .dist-valor  { font-size: 8px; }
 }

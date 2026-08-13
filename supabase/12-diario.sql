@@ -160,6 +160,8 @@ create trigger diario_sync_del
 -- ───────────────────────────────────────────────────────────────────────
 
 -- Diario de un usuario, con los datos de la serie y su nota
+drop function if exists public.diario_de(uuid, integer);
+
 create or replace function public.diario_de(usuario uuid, limite integer default 60)
 returns table (
   id          bigint,
@@ -195,6 +197,8 @@ grant execute on function public.diario_de(uuid, integer) to anon, authenticated
 
 
 -- Visionados de UNA serie por parte del usuario actual
+drop function if exists public.mis_visionados(integer);
+
 create or replace function public.mis_visionados(p_serie integer)
 returns table (id bigint, vista_el date, revision boolean, nota text)
 language sql
@@ -212,6 +216,8 @@ grant execute on function public.mis_visionados(integer) to authenticated;
 
 
 -- Resumen por meses: alimenta el calendario del perfil
+drop function if exists public.diario_por_mes(uuid, integer);
+
 create or replace function public.diario_por_mes(usuario uuid, anio integer)
 returns table (mes integer, total bigint)
 language sql

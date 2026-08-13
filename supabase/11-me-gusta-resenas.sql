@@ -78,6 +78,8 @@ create trigger likes_limite
 --      'recientes' → más nuevas primero
 --      'amigos'    → primero las de quienes sigues
 -- ───────────────────────────────────────────────────────────────────────
+drop function if exists public.resenas_de_serie(integer, text, integer);
+
 create or replace function public.resenas_de_serie(
   p_serie  integer,
   p_orden  text default 'populares',

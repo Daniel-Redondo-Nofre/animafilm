@@ -11,13 +11,22 @@ import { supabase } from "./supabase";
  * @param {number} serieId
  * @param {"populares"|"recientes"|"amigos"} orden
  */
-export async function fetchResenas(serieId, orden = "populares") {
+export async function fetchResenas(serieId, orden = "populares", opciones = {}) {
   const { data, error } = await supabase.rpc("resenas_de_serie", {
     p_serie: serieId,
     p_orden: orden,
-    p_limite: 30,
+    p_limite: opciones.limite ?? 30,
+    p_solo_seguidos:    opciones.soloSeguidos    ?? false,
+    p_excluir_seguidos: opciones.excluirSeguidos ?? false,
   });
   if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/** Reparto de notas de una serie, para el histograma */
+export async function fetchDistribucion(serieId) {
+  const { data, error } = await supabase.rpc("distribucion_notas", { p_serie: serieId });
+  if (error) return [];
   return data ?? [];
 }
 

@@ -10,6 +10,7 @@ import Portal from "./components/Portal.jsx";
 import Avatar from "./components/Avatar.jsx";
 import Estrellas, { EstrellasNota } from "./components/Estrellas.jsx";
 import { fetchResenas, darLike, quitarLike } from "./lib/resenas";
+const Distribucion = lazy(() => import("./components/Distribucion.jsx"));
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { EsqueletoRuta, EsqueletoCatalogo } from "./components/Esqueletos.jsx";
 import { fetchSeguidos, buscarUsuarios } from "./lib/social";
@@ -94,6 +95,112 @@ function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVis
   );
 }
 
+
+// Tarjeta de reseña ajena. Extraída para no duplicarla entre el bloque
+// de "quienes sigues" y la lista general.
+function TarjetaResena({
+  r, user, abiertas, setAbiertas, reveladas, setReveladas,
+  hilos, setHilos, ocupadoLike, alternarLike, onShowAuth, setReviews,
+}) {
+  const LARGO = 260;
+  const larga = r.content.length > LARGO;
+  const abierta = abiertas.has(r.id);
+  const oculta = r.spoiler && !reveladas.has(r.id);
+
+  return (
+    <div className="review-card animate-fadeUp" style={{ marginBottom:10 }}>
+      <div className="resena-cabecera">
+        <Link to={`/u/${r.username}`} aria-label={`Ver perfil de ${r.username}`}>
+          <Avatar perfil={r} size={30}/>
+        </Link>
+        <div style={{ flex:1, minWidth:0 }}>
+          <Link to={`/u/${r.username}`} className="enlace-usuario">
+            <strong className="resena-autor">{r.display_name||r.username}</strong>
+          </Link>
+          <div className="resena-meta">
+            {r.rating != null && <EstrellasNota nota={r.rating / 2} size={13} />}
+            <span>{new Date(r.created_at).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"})}</span>
+            {r.la_sigo && <span className="chip resena-sigo">Le sigues</span>}
+          </div>
+        </div>
+      </div>
+
+      {oculta ? (
+        <button className="spoiler-tapa" onClick={()=>setReveladas(p=>new Set(p).add(r.id))}>
+          <span className="spoiler-icono" aria-hidden="true">⚠️</span>
+          <span>
+            <strong>Esta reseña contiene spoilers</strong>
+            <em>Pulsa para mostrarla</em>
+          </span>
+        </button>
+      ) : (
+        <>
+          {r.spoiler && (
+            <span className="chip spoiler-chip">⚠️ Con spoilers</span>
+          )}
+          <p className={`resena-texto${larga && !abierta ? " recortada" : ""}`}>{r.content}</p>
+          {larga && (
+            <button className="resena-mas"
+                    onClick={()=>setAbiertas(prev=>{
+                      const n = new Set(prev);
+                      abierta ? n.delete(r.id) : n.add(r.id);
+                      return n;
+                    })}
+                    aria-expanded={abierta}>
+              {abierta ? "Mostrar menos" : "Seguir leyendo"}
+            </button>
+          )}
+        </>
+      )}
+
+      <div className="resena-acciones">
+        <button
+          className={`like-btn${r.me_gusta ? " activo" : ""}`}
+          onClick={()=>alternarLike(r)}
+          disabled={ocupadoLike === r.id}
+          aria-pressed={!!r.me_gusta}
+          aria-label={r.me_gusta
+            ? `Quitar me gusta a la reseña de ${r.display_name||r.username}`
+            : `Me gusta la reseña de ${r.display_name||r.username}`}
+        >
+          <svg className="like-icono" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path d="M12 20.7l-1.45-1.32C5.4 14.74 2 11.65 2 7.87 2 4.78 4.42 2.36 7.5 2.36c1.74 0 3.41.81 4.5 2.09 1.09-1.28 2.76-2.09 4.5-2.09 3.08 0 5.5 2.42 5.5 5.51 0 3.78-3.4 6.87-8.55 11.52L12 20.7z"/>
+          </svg>
+          <span className="like-num">{Number(r.likes) > 0 ? r.likes : "Me gusta"}</span>
+        </button>
+
+        <button
+          className={`comentar-btn${hilos.has(r.id) ? " activo" : ""}`}
+          onClick={()=>setHilos(prev=>{
+            const n = new Set(prev);
+            n.has(r.id) ? n.delete(r.id) : n.add(r.id);
+            return n;
+          })}
+          aria-expanded={hilos.has(r.id)}
+        >
+          <span aria-hidden="true">💬</span>
+          {Number(r.comentarios) > 0
+            ? `${r.comentarios} ${Number(r.comentarios) === 1 ? "respuesta" : "respuestas"}`
+            : "Responder"}
+        </button>
+      </div>
+
+      {hilos.has(r.id) && (
+        <Suspense fallback={<div className="skeleton" style={{ height:44, marginTop:10 }}/>}>
+          <Comentarios
+            reviewId={r.id}
+            autorResena={r.user_id}
+            user={user}
+            onShowAuth={onShowAuth}
+            onCambio={(delta)=>setReviews(prev=>prev.map(x=>
+              x.id === r.id ? { ...x, comentarios: Number(x.comentarios||0) + delta } : x))}
+          />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+
 function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onClose, onToggleVista, onTogglePendiente, onRate, onShowAuth, onFiltrarGenero }) {
   // En móvil abre el menú nativo de compartir; en escritorio copia el enlace.
   async function compartir() {
@@ -124,15 +231,26 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   const modalRef = useModal(onClose);
 
   const [orden, setOrden] = useState("populares");
+  const [deSeguidos, setDeSeguidos] = useState([]);
+  const [spoiler, setSpoiler] = useState(false);
+  // Reseñas con spoiler ya reveladas
+  const [reveladas, setReveladas] = useState(() => new Set());
 
   const cargarResenas = useCallback(async ()=>{
     setLoadingR(true);
     try {
-      const data = await fetchResenas(serie.id, orden);
-      setReviews(data);
-      if(user) setMyReview(data.find(r=>r.user_id===user.id)?.content || "");
+      // Con sesión, las de quienes sigues van aparte y se excluyen del
+      // resto: si no, aparecerían duplicadas en las dos listas.
+      const [general, seguidos] = await Promise.all([
+        fetchResenas(serie.id, orden, { excluirSeguidos: !!user }),
+        user ? fetchResenas(serie.id, "populares", { soloSeguidos: true, limite: 6 }) : [],
+      ]);
+      setReviews(general);
+      setDeSeguidos(seguidos);
+      const mia = general.find(r=>r.user_id===user?.id);
+      if(user){ setMyReview(mia?.content || ""); setSpoiler(!!mia?.spoiler); }
     } catch {
-      setReviews([]);
+      setReviews([]); setDeSeguidos([]);
     } finally {
       setLoadingR(false);
     }
@@ -187,7 +305,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
 
     setGuardando(true);
     const {error}=await supabase.from("reviews")
-      .upsert({user_id:user.id,serie_id:serie.id,content:texto},{onConflict:"user_id,serie_id"});
+      .upsert({user_id:user.id,serie_id:serie.id,content:texto,spoiler},{onConflict:"user_id,serie_id"});
     setGuardando(false);
 
     if(error){ toast.error(mensajeDeError(error)); return; }
@@ -262,6 +380,12 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             </div>
           )}
 
+          {stats?.votos > 0 && (
+            <Suspense fallback={null}>
+              <Distribucion serieId={serie.id} notaMedia={stats.nota_media} votos={stats.votos} />
+            </Suspense>
+          )}
+
           <div style={{ marginBottom:"1.2rem" }}>
             <p style={{ fontWeight:800, fontSize:11, color:"var(--accent)", marginBottom:10, letterSpacing:1.5, textTransform:"uppercase" }}>Tu valoración</p>
             <Estrellas valor={rating} onChange={onRate} size={30} mostrarNumero />
@@ -315,6 +439,10 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
               {editing||!hasMyReview?(
                 <>
                   <textarea className="textarea" value={myReview} onChange={e=>setMyReview(e.target.value)} placeholder="¿Qué recuerdas? ¿La veías con alguien especial?" rows={3}/>
+                  <label className="spoiler-check">
+                    <input type="checkbox" checked={spoiler} onChange={e=>setSpoiler(e.target.checked)} />
+                    <span>⚠️ Contiene spoilers</span>
+                  </label>
                   <div style={{ display:"flex", gap:8, marginTop:8 }}>
                     <button className="btn btn-primary" style={{ flex:1, padding:"8px 0", fontSize:13 }} onClick={saveReview} disabled={guardando}>{guardando?"Publicando…":"Publicar"}</button>
                     {hasMyReview&&<button className="btn btn-ghost" style={{ padding:"8px 14px", fontSize:13 }} onClick={()=>setEditing(false)}>Cancelar</button>}
@@ -338,92 +466,34 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
           )}
           {loadingR
             ?Array(2).fill(0).map((_,i)=><div key={i} className="review-card" style={{ marginBottom:10 }}><Skeleton height={80}/></div>)
-            :reviews.filter(r=>r.user_id!==user?.id).map(r=>(
-              <div key={r.id} className="review-card animate-fadeUp" style={{ marginBottom:10 }}>
-                <div className="resena-cabecera">
-                  <Link to={`/u/${r.username}`} aria-label={`Ver perfil de ${r.username}`}><Avatar perfil={r} size={30}/></Link>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <Link to={`/u/${r.username}`} className="enlace-usuario">
-                      <strong className="resena-autor">{r.display_name||r.username}</strong>
-                    </Link>
-                    <div className="resena-meta">
-                      {r.rating != null && <EstrellasNota nota={r.rating / 2} size={13} />}
-                      <span>{new Date(r.created_at).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"})}</span>
-                      {r.la_sigo && <span className="chip resena-sigo">Le sigues</span>}
-                    </div>
-                  </div>
+            :<>
+              {deSeguidos.length > 0 && (
+                <div className="resenas-seguidos">
+                  <p className="resenas-grupo">👥 De quienes sigues</p>
+                  {deSeguidos.map(r=>(
+                    <TarjetaResena key={`s-${r.id}`} r={r} user={user}
+                      abiertas={abiertas} setAbiertas={setAbiertas}
+                      reveladas={reveladas} setReveladas={setReveladas}
+                      hilos={hilos} setHilos={setHilos}
+                      ocupadoLike={ocupadoLike} alternarLike={alternarLike}
+                      onShowAuth={onShowAuth} setReviews={setDeSeguidos} />
+                  ))}
                 </div>
+              )}
 
-                {(() => {
-                  const LARGO = 260;
-                  const larga = r.content.length > LARGO;
-                  const abierta = abiertas.has(r.id);
-                  return (
-                    <>
-                      <p className={`resena-texto${larga && !abierta ? " recortada" : ""}`}>
-                        {r.content}
-                      </p>
-                      {larga && (
-                        <button className="resena-mas"
-                                onClick={()=>setAbiertas(prev=>{
-                                  const n = new Set(prev);
-                                  abierta ? n.delete(r.id) : n.add(r.id);
-                                  return n;
-                                })}
-                                aria-expanded={abierta}>
-                          {abierta ? "Mostrar menos" : "Seguir leyendo"}
-                        </button>
-                      )}
-                    </>
-                  );
-                })()}
+              {deSeguidos.length > 0 && reviews.filter(r=>r.user_id!==user?.id).length > 0 && (
+                <p className="resenas-grupo">🌍 Del resto de la comunidad</p>
+              )}
 
-                <div className="resena-acciones">
-                <button
-                  className={`like-btn${r.me_gusta ? " activo" : ""}`}
-                  onClick={()=>alternarLike(r)}
-                  disabled={ocupadoLike === r.id}
-                  aria-pressed={!!r.me_gusta}
-                  aria-label={r.me_gusta
-                    ? `Quitar me gusta a la reseña de ${r.display_name||r.username}`
-                    : `Me gusta la reseña de ${r.display_name||r.username}`}
-                >
-                  <svg className="like-icono" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                    <path d="M12 20.7l-1.45-1.32C5.4 14.74 2 11.65 2 7.87 2 4.78 4.42 2.36 7.5 2.36c1.74 0 3.41.81 4.5 2.09 1.09-1.28 2.76-2.09 4.5-2.09 3.08 0 5.5 2.42 5.5 5.51 0 3.78-3.4 6.87-8.55 11.52L12 20.7z"/>
-                  </svg>
-                  <span className="like-num">{Number(r.likes) > 0 ? r.likes : "Me gusta"}</span>
-                </button>
-
-                <button
-                  className={`comentar-btn${hilos.has(r.id) ? " activo" : ""}`}
-                  onClick={()=>setHilos(prev=>{
-                    const n = new Set(prev);
-                    n.has(r.id) ? n.delete(r.id) : n.add(r.id);
-                    return n;
-                  })}
-                  aria-expanded={hilos.has(r.id)}
-                >
-                  <span aria-hidden="true">💬</span>
-                  {Number(r.comentarios) > 0
-                    ? `${r.comentarios} ${Number(r.comentarios) === 1 ? "respuesta" : "respuestas"}`
-                    : "Responder"}
-                </button>
-                </div>
-
-                {hilos.has(r.id) && (
-                  <Suspense fallback={<div className="skeleton" style={{ height:44, marginTop:10 }}/>}>
-                    <Comentarios
-                      reviewId={r.id}
-                      autorResena={r.user_id}
-                      user={user}
-                      onShowAuth={onShowAuth}
-                      onCambio={(delta)=>setReviews(prev=>prev.map(x=>
-                        x.id === r.id ? { ...x, comentarios: Number(x.comentarios||0) + delta } : x))}
-                    />
-                  </Suspense>
-                )}
-              </div>
-            ))
+              {reviews.filter(r=>r.user_id!==user?.id).map(r=>(
+                <TarjetaResena key={r.id} r={r} user={user}
+                  abiertas={abiertas} setAbiertas={setAbiertas}
+                  reveladas={reveladas} setReveladas={setReveladas}
+                  hilos={hilos} setHilos={setHilos}
+                  ocupadoLike={ocupadoLike} alternarLike={alternarLike}
+                  onShowAuth={onShowAuth} setReviews={setReviews} />
+              ))}
+            </>
           }
           {!loadingR&&reviews.length===0&&<p style={{ color:"var(--text-faint)", fontSize:14, textAlign:"center", padding:"1rem" }}>Sé el primero en reseñar esta serie</p>}
         </div>
