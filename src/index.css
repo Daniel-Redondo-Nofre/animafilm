@@ -1982,3 +1982,101 @@ body > * { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) {
   .like-btn.activo .like-icono { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ARREGLO DEL PARPADEO AL PASAR EL RATÓN
+   ═══════════════════════════════════════════════════════════════════════
+
+   El síntoma: algunos elementos vibraban bajo el cursor.
+
+   La causa: al crecer con `scale`, el elemento se desplaza y su borde
+   puede salirse de debajo del puntero. Eso dispara `mouseleave`, encoge,
+   vuelve a quedar bajo el cursor, dispara `mouseenter`… y entra en
+   bucle. Cuanto más rápida la transición, más rápido el temblor.
+
+   Tres medidas:
+   1. Sustituir `scale` por desplazamientos, que no alteran el área.
+   2. Donde el escalado es necesario, un pseudo-elemento invisible fija
+      un área táctil constante.
+   3. Transiciones algo más lentas y con curva suave: un rebote elástico
+      sobrepasa el destino y agrava el efecto.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Escalados sustituidos por desplazamiento ── */
+.pers-color:hover  { transform: translateY(-3px); }
+.pers-emoji:hover  { transform: translateY(-3px); background: var(--bg-muted); }
+
+/* El avatar sí escala, pero se le fija un área estable */
+.avatar { position: relative; }
+.avatar::after {
+  content: '';
+  position: absolute;
+  inset: -6px;              /* margen constante: el cursor nunca lo pierde */
+  border-radius: 50%;
+}
+.avatar:hover { transform: scale(1.08) rotate(-3deg); animation: none; }
+
+/* Las estrellas: área fija alrededor de cada una */
+.estrella { position: relative; }
+.estrella::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  z-index: 1;
+}
+.estrellas:not(.solo-lectura) .estrella:hover .estrella-svg {
+  transform: translateY(-2px) scale(1.08);
+}
+
+/* El póster de la tarjeta escala dentro de un contenedor con overflow
+   oculto, así que el área no cambia: ese sí puede quedarse. */
+
+/* ── 2. Transiciones más suaves ── */
+.btn, .sort-btn, .genre-pill, .genre-chip, .insignia,
+.mini-stat, .perfil-cifra, .serie-pill, .pers-color,
+.pers-emoji, .pers-serie, .like-btn, .lista-card, .modal-close {
+  /* 0.18s con salida suave: lo bastante ágil para responder, lo bastante
+     lento para que el borde no cruce el puntero de golpe. */
+  transition-duration: .18s;
+  transition-timing-function: cubic-bezier(.2, .9, .3, 1);
+}
+
+/* Los elementos grandes se mueven un punto menos */
+.card, .feed-item, .stat-card, .favorita, .review-card {
+  transition-duration: .2s;
+  transition-timing-function: cubic-bezier(.2, .9, .3, 1);
+}
+
+/* ── 3. Sin rebote elástico en hover ──
+   `cubic-bezier(.34,1.56,.64,1)` se pasa del destino y vuelve: bien para
+   un clic puntual, mal para hover, porque ese rebote saca el borde de
+   debajo del cursor. Se conserva solo en las animaciones de pulsación. */
+.card:hover, .feed-item:hover, .stat-card:hover,
+.favorita:hover, .insignia:hover, .genre-pill:hover,
+.serie-pill:hover, .perfil-cifra:hover, .mini-stat:hover,
+.pers-serie:hover, .lista-card:hover {
+  transition-timing-function: cubic-bezier(.2, .9, .3, 1);
+}
+
+/* ── Texto de reseña plegable ── */
+.resena-texto.recortada {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.resena-mas {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: var(--font-body);
+  font-weight: 800; font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.resena-mas:hover { filter: brightness(1.15); }

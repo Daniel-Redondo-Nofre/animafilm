@@ -159,6 +159,9 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   // ── ME GUSTA ────────────────────────────────────────────────────────
   // Optimista: el corazón responde al instante y se revierte si falla.
   const [ocupadoLike, setOcupadoLike] = useState(null);
+  // Reseñas desplegadas: por defecto las largas van recortadas para
+  // que se vean varias de un vistazo.
+  const [abiertas, setAbiertas] = useState(() => new Set());
 
   async function alternarLike(r){
     if(!user){ onShowAuth?.(); return; }
@@ -288,9 +291,9 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             {reviews.length > 1 && (
               <div className="resenas-orden" role="group" aria-label="Ordenar reseñas">
                 {[
-                  { id:"populares", label:"❤️ Populares" },
-                  { id:"recientes", label:"🕐 Recientes" },
-                  ...(user ? [{ id:"amigos", label:"👥 Seguidos" }] : []),
+                  { id:"populares", label:"❤️ Más gustadas" },
+                  { id:"recientes", label:"🕐 Más nuevas" },
+                  ...(user ? [{ id:"amigos", label:"👥 A quien sigo" }] : []),
                 ].map(o=>(
                   <button key={o.id} className={`sort-btn${orden===o.id?" active":""}`}
                           aria-pressed={orden===o.id}
@@ -352,7 +355,29 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                   </div>
                 </div>
 
-                <p className="resena-texto">{r.content}</p>
+                {(() => {
+                  const LARGO = 260;
+                  const larga = r.content.length > LARGO;
+                  const abierta = abiertas.has(r.id);
+                  return (
+                    <>
+                      <p className={`resena-texto${larga && !abierta ? " recortada" : ""}`}>
+                        {r.content}
+                      </p>
+                      {larga && (
+                        <button className="resena-mas"
+                                onClick={()=>setAbiertas(prev=>{
+                                  const n = new Set(prev);
+                                  abierta ? n.delete(r.id) : n.add(r.id);
+                                  return n;
+                                })}
+                                aria-expanded={abierta}>
+                          {abierta ? "Mostrar menos" : "Seguir leyendo"}
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
 
                 <button
                   className={`like-btn${r.me_gusta ? " activo" : ""}`}
