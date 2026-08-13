@@ -345,7 +345,12 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                       <strong className="resena-autor">{r.display_name||r.username}</strong>
                     </Link>
                     <div className="resena-meta">
-                      {r.rating != null && <EstrellasNota nota={r.rating / 2} size={12} />}
+                      {r.rating != null && (
+                        <>
+                          <EstrellasNota nota={r.rating / 2} size={13} />
+                          <span className="resena-sep" aria-hidden="true">·</span>
+                        </>
+                      )}
                       <span>{new Date(r.created_at).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"})}</span>
                       {r.la_sigo && <span className="chip resena-sigo">Le sigues</span>}
                     </div>
@@ -363,8 +368,10 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                     ? `Quitar me gusta a la reseña de ${r.display_name||r.username}`
                     : `Me gusta la reseña de ${r.display_name||r.username}`}
                 >
-                  <span className="like-icono" aria-hidden="true">{r.me_gusta ? "❤️" : "🤍"}</span>
-                  {Number(r.likes) > 0 && <span className="like-num">{r.likes}</span>}
+                  <svg className="like-icono" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                    <path d="M12 20.7l-1.45-1.32C5.4 14.74 2 11.65 2 7.87 2 4.78 4.42 2.36 7.5 2.36c1.74 0 3.41.81 4.5 2.09 1.09-1.28 2.76-2.09 4.5-2.09 3.08 0 5.5 2.42 5.5 5.51 0 3.78-3.4 6.87-8.55 11.52L12 20.7z"/>
+                  </svg>
+                  <span className="like-num">{Number(r.likes) > 0 ? r.likes : "Me gusta"}</span>
                 </button>
               </div>
             ))

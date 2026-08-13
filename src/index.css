@@ -1881,3 +1881,105 @@ body > * { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) {
   .estrella-svg, .estrella-svg.pop { animation: none; transition: none; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RESEÑAS Y ME GUSTA
+   ═══════════════════════════════════════════════════════════════════════ */
+.resenas-cabecera {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.resenas-cabecera h3 { font-size: 20px; color: var(--accent); }
+.resenas-orden { display: flex; gap: 5px; flex-wrap: wrap; }
+.resenas-orden .sort-btn { font-size: 11px; padding: 4px 10px; }
+
+.resena-cabecera {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 10px;
+}
+.resena-autor { font-size: 13.5px; color: var(--text); display: block; }
+.resena-meta {
+  display: flex; align-items: center;
+  /* Separación holgada: las estrellas y la fecha son datos distintos y
+     antes se leían como un solo bloque pegado. */
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 11.5px; color: var(--text-faint); font-weight: 700;
+}
+.resena-sep { color: var(--text-faint); opacity: .55; }
+.resena-sigo {
+  font-size: 9px; padding: 1px 8px;
+  background: var(--bg-muted); color: var(--text-muted);
+  box-shadow: none;
+}
+.resena-texto {
+  font-size: 14px; color: var(--text-muted);
+  line-height: 1.7; font-weight: 700;
+}
+
+/* ── Botón de me gusta ─────────────────────────────────────────────────
+   El emoji 🤍 se perdía sobre el papel claro y el botón sin texto
+   parecía un icono suelto sin función. Ahora lleva corazón en SVG, que
+   hereda el color, y etiqueta hasta que hay algún me gusta.
+   ═══════════════════════════════════════════════════════════════════════ */
+.like-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 12px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 800; font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-fast), background-color var(--t-fast),
+              border-color var(--t-fast), color var(--t-fast),
+              box-shadow var(--t-fast);
+}
+.like-icono {
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: fill .18s ease, transform .18s ease;
+}
+
+.like-btn:hover:not(:disabled) {
+  transform: translate(-1px,-2px);
+  border-color: var(--rojo);
+  color: var(--rojo);
+  box-shadow: 3px 3px 0 var(--rojo);
+}
+.like-btn:hover:not(:disabled) .like-icono { fill: color-mix(in srgb, var(--rojo) 22%, transparent); }
+.like-btn:active:not(:disabled) { transform: translate(2px,2px); box-shadow: none; }
+.like-btn:disabled { opacity: .55; cursor: wait; }
+
+.like-btn.activo {
+  background: color-mix(in srgb, var(--rojo) 12%, var(--bg-card));
+  border-color: var(--rojo);
+  color: var(--rojo);
+  box-shadow: 2px 2px 0 var(--rojo);
+}
+.like-btn.activo .like-icono {
+  fill: var(--rojo);
+  animation: latido .45s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes latido {
+  0%   { transform: scale(1); }
+  28%  { transform: scale(1.5); }
+  52%  { transform: scale(.9); }
+  74%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.like-num { font-variant-numeric: tabular-nums; line-height: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .like-btn.activo .like-icono { animation: none; }
+}
