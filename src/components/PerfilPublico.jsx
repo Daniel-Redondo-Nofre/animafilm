@@ -14,6 +14,7 @@ import { supabase } from "../lib/supabase";
 import { poster as posterTam } from "../lib/series";
 const MisListas    = lazy(() => import("./Listas.jsx").then(m => ({ default: m.MisListas })));
 const Personalizar  = lazy(() => import("./Personalizar.jsx"));
+const Diario        = lazy(() => import("./Diario.jsx"));
 const EditarPerfil  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.EditarPerfil })));
 const BorrarCuenta  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 
@@ -235,6 +236,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
       <div className="perfil-cifras">
         {[
           { v: perfil.vistas,        l: "vistas" },
+          { v: perfil.visionados ?? 0, l: "visionados" },
           { v: perfil.valoraciones,  l: "valoradas" },
           { v: perfil.nota_media ?? "—", l: "nota media" },
           { v: perfil.resenas,       l: "reseñas" },
@@ -328,6 +330,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
       {/* ── Pestañas ── */}
       <div className="sort-bar" role="tablist" style={{ marginTop: "1.8rem" }}>
         {[
+          { id: "diario",  label: "📅 Diario" },
           { id: "vistas",  label: `📺 Vistas (${seriesVistas.length})` },
           { id: "resenas", label: `💬 Reseñas (${resenas.length})` },
           { id: "listas",  label: "📋 Listas" },
@@ -341,7 +344,11 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
       </div>
 
       {/* ── Contenido ── */}
-      {pestana === "listas" ? (
+      {pestana === "diario" ? (
+        <Suspense fallback={<div className="skeleton" style={{ height:160, marginTop:"1rem" }}/>}>
+          <Diario userId={perfil.id} esMio={esMiPerfil} />
+        </Suspense>
+      ) : pestana === "listas" ? (
         <Suspense fallback={<div className="skeleton" style={{ height:80, marginTop:"1rem" }}/>}>
           <MisListas user={user} userId={perfil.id} propias={esMiPerfil} />
         </Suspense>

@@ -16,6 +16,7 @@ const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
 const DetalleLista  = lazy(() => import("./components/Listas.jsx"));
 const Estadisticas  = lazy(() => import("./components/Estadisticas.jsx"));
 const AnadirALista  = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.AnadirALista })));
+const ApuntarVisionado = lazy(() => import("./components/Diario.jsx").then(m => ({ default: m.ApuntarVisionado })));
 const MisListas     = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.MisListas })));
 import { useModal } from "./lib/useModal";
 import { Toasts, toast, mensajeDeError } from "./lib/toast.jsx";
@@ -153,6 +154,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
 
   const [guardando, setGuardando] = useState(false);
   const [mostrarListas, setMostrarListas] = useState(false);
+  const [mostrarDiario, setMostrarDiario] = useState(false);
 
   const recargarReseñas = cargarResenas;
 
@@ -276,6 +278,11 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
           <div style={{ display:"flex", gap:10, marginBottom:"2rem" }}>
             <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"11px 0", fontSize:14 }} onClick={onToggleVista}>{vista?"✓ Ya la he visto":"Marcar como vista"}</button>
             <button className={pendiente?"btn btn-warning":"btn btn-ghost"} style={{ padding:"11px 18px", fontSize:14 }} onClick={onTogglePendiente}>{pendiente?"🕐 Guardada":"🕐 Pendiente"}</button>
+            <button className="btn btn-ghost" style={{ padding:"11px 16px", fontSize:14 }}
+                    onClick={()=> user ? setMostrarDiario(true) : onShowAuth?.()}
+                    aria-label={`Apuntar cuándo viste ${serie.titulo}`} title="Apuntar visionado">
+              📅
+            </button>
             <button className="btn btn-ghost" style={{ padding:"11px 16px", fontSize:14 }}
                     onClick={()=> user ? setMostrarListas(true) : onShowAuth?.()}
                     aria-label={`Añadir ${serie.titulo} a una lista`} title="Añadir a lista">
@@ -402,6 +409,11 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
         {mostrarListas && user && (
           <Suspense fallback={null}>
             <AnadirALista user={user} serie={serie} onClose={()=>setMostrarListas(false)} />
+          </Suspense>
+        )}
+        {mostrarDiario && user && (
+          <Suspense fallback={null}>
+            <ApuntarVisionado user={user} serie={serie} onClose={()=>setMostrarDiario(false)} />
           </Suspense>
         )}
       </div>

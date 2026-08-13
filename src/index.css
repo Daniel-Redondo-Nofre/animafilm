@@ -2080,3 +2080,134 @@ body > * { position: relative; z-index: 1; }
   text-underline-offset: 2px;
 }
 .resena-mas:hover { filter: brightness(1.15); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DIARIO DE VISIONADO
+   ═══════════════════════════════════════════════════════════════════════ */
+.fechas-rapidas {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+.fechas-rapidas .sort-btn { font-size: 11px; padding: 4px 11px; }
+
+/* ── Visionados previos, dentro del diálogo ── */
+.previos {
+  background: var(--bg-muted);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.previo {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+  border-bottom: 2px dotted var(--border);
+  font-size: 12px;
+}
+.previo:last-child { border-bottom: none; }
+.previo-fecha { font-weight: 800; color: var(--text); flex-shrink: 0; }
+.previo-chip {
+  font-size: 9px; padding: 1px 7px;
+  background: var(--bg-card); color: var(--text-muted);
+  box-shadow: none; flex-shrink: 0;
+}
+.previo-nota {
+  font-style: normal; color: var(--text-muted); font-weight: 700;
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.previo-borrar {
+  margin-left: auto; flex-shrink: 0;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint); font-size: 13px;
+  padding: 2px 5px; border-radius: 4px;
+}
+.previo-borrar:hover { background: var(--rojo); color: #fff; }
+
+/* ── El diario ── */
+.diario-mes { margin-bottom: 1.6rem; }
+.diario-titulo {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 20px; color: var(--accent);
+  text-transform: capitalize;
+  padding-bottom: 7px;
+  border-bottom: var(--border-w) solid var(--border);
+  margin-bottom: 11px;
+}
+.diario-titulo span { color: var(--text-faint); font-size: 15px; }
+.diario-titulo em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 12px; color: var(--text-muted);
+  background: var(--bg-muted);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 1px 10px;
+}
+
+.diario-lista { display: flex; flex-direction: column; gap: 8px; }
+
+.diario-entrada {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--sh-sm);
+  padding: 9px 12px;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+}
+.diario-entrada:hover {
+  transform: translate(-2px,-2px);
+  box-shadow: var(--sh-btn);
+  border-color: var(--accent);
+}
+
+/* El día en grande a la izquierda: es la columna que ordena el diario */
+.diario-dia {
+  font-family: var(--font-display);
+  font-size: 24px; color: var(--accent);
+  line-height: 1;
+  width: 30px; flex-shrink: 0; text-align: center;
+}
+
+.diario-poster {
+  width: 38px; flex-shrink: 0;
+  aspect-ratio: 2 / 3;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  display: block;
+}
+.diario-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.diario-datos { flex: 1; min-width: 0; }
+.diario-serie {
+  font-weight: 800; font-size: 14px; color: var(--text);
+  text-decoration: none;
+  display: block;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.diario-serie:hover { color: var(--accent); text-decoration: underline; }
+.diario-serie span { color: var(--text-faint); font-weight: 700; font-size: 12px; }
+.diario-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 3px;
+}
+.diario-nota {
+  font-size: 12px; color: var(--text-muted); font-weight: 700;
+  margin-top: 4px; line-height: 1.5;
+}
+
+.diario-borrar {
+  flex-shrink: 0;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint); font-size: 14px;
+  padding: 4px 7px; border-radius: 5px;
+  transition: background-color var(--t-fast), color var(--t-fast);
+}
+.diario-borrar:hover { background: var(--rojo); color: #fff; }
+
+@media (max-width: 620px) {
+  .diario-dia    { font-size: 20px; width: 24px; }
+  .diario-poster { width: 32px; }
+  .diario-serie  { font-size: 13px; }
+}
