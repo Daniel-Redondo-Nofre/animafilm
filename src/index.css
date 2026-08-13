@@ -195,7 +195,10 @@ body > * { position: relative; z-index: 1; }
 /* ═══════════════════════════════════════════════════════════════════════
    ANIMACIONES
    ═══════════════════════════════════════════════════════════════════════ */
-@keyframes fadeUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp {
+  from { opacity: .55; transform: translateY(9px); }
+  to   { opacity: 1;   transform: translateY(0); }
+}
 @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
 @keyframes scaleIn  { from{opacity:0;transform:scale(.88) rotate(-1deg)} to{opacity:1;transform:scale(1) rotate(0)} }
 @keyframes slideDown{ from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
@@ -208,7 +211,11 @@ body > * { position: relative; z-index: 1; }
 .animate-fadeIn  { animation: fadeIn  .25s ease both; }
 .animate-scaleIn { animation: scaleIn .3s  cubic-bezier(.34,1.56,.64,1) both; }
 .animate-slide   { animation: slideDown .28s ease both; }
-.page-enter      { animation: fadeUp .35s cubic-bezier(.22,1,.36,1) both; }
+.page-enter { animation: fadeUp .26s cubic-bezier(.22,1,.36,1) both; }
+
+/* Las tarjetas del catálogo entran escalonadas, pero con un recorrido
+   corto: un desplazamiento largo por tarjeta se lee como sacudida. */
+.animate-fadeUp { animation: fadeUp .3s cubic-bezier(.22,1,.36,1) both; }
 
 .delay-1{animation-delay:.04s} .delay-2{animation-delay:.08s}
 .delay-3{animation-delay:.13s} .delay-4{animation-delay:.18s}
@@ -2214,3 +2221,28 @@ body > * { position: relative; z-index: 1; }
 
 /* Fila de acciones de una reseña */
 .resena-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TRANSICIÓN ENTRE PÁGINAS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* El esqueleto aparece sin animación propia: si también entrase con
+   fadeUp, habría dos animaciones seguidas —esqueleto y contenido— y ese
+   doble movimiento es justo lo que se percibe como parpadeo. */
+.skeleton { animation: shimmer 1.5s infinite linear; }
+
+/* Altura mínima en el contenido: sin ella la página se encoge al
+   descargar el esqueleto y se estira al llegar los datos, y ese salto
+   arrastra el scroll. */
+.contenido { min-height: 60vh; }
+
+/* El destello del esqueleto, más suave: a todo contraste llama más la
+   atención que el contenido que va a sustituirlo. */
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-muted) 25%,
+    color-mix(in srgb, var(--bg-card) 70%, var(--bg-muted)) 50%,
+    var(--bg-muted) 75%);
+  background-size: 600px 100%;
+  border: 2px solid color-mix(in srgb, var(--border) 45%, transparent);
+}

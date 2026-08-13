@@ -9,6 +9,7 @@ import { slugify } from "../lib/slug";
 import { toast } from "../lib/toast.jsx";
 import { avisar, useCambios, CAMBIO } from "../lib/eventos";
 import Avatar from "./Avatar.jsx";
+import { EsqueletoPerfil } from "./Esqueletos.jsx";
 import { calcularInsignias } from "../lib/insignias";
 import { supabase } from "../lib/supabase";
 import { poster as posterTam } from "../lib/series";
@@ -111,20 +112,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
   }, [user, perfil, siguiendo, ocupado, onShowAuth]);
 
   // ── Cargando ────────────────────────────────────────────────────────
-  if (cargando) return (
-    <div className="page-enter">
-      <div className="perfil-ficha">
-        <Skeleton width={84} height={84} style={{ borderRadius: "50%" }} />
-        <div style={{ flex: 1 }}>
-          <Skeleton height={30} width="45%" style={{ marginBottom: 8 }} />
-          <Skeleton height={14} width="30%" />
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 12, marginTop: "1.5rem" }}>
-        {Array(5).fill(0).map((_, i) => <Skeleton key={i} height={90} />)}
-      </div>
-    </div>
-  );
+  if (cargando) return <div className="page-enter"><EsqueletoPerfil /></div>;
 
   // ── No existe ───────────────────────────────────────────────────────
   if (!perfil) return (

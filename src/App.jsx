@@ -11,6 +11,7 @@ import Avatar from "./components/Avatar.jsx";
 import Estrellas, { EstrellasNota } from "./components/Estrellas.jsx";
 import { fetchResenas, darLike, quitarLike } from "./lib/resenas";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import { EsqueletoRuta, EsqueletoCatalogo } from "./components/Esqueletos.jsx";
 import { fetchSeguidos, buscarUsuarios } from "./lib/social";
 const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
 const DetalleLista  = lazy(() => import("./components/Listas.jsx"));
@@ -41,18 +42,6 @@ const ORDENES = [
 
 function Skeleton({ width="100%", height=20, style={} }) {
   return <div className="skeleton" style={{ width, height, ...style }} />;
-}
-
-function CardSkeleton() {
-  return (
-    <div className="card" style={{ overflow:"hidden" }}>
-      <Skeleton height={190} style={{ borderRadius:0 }} />
-      <div style={{ padding:"10px 12px 14px", display:"flex", flexDirection:"column", gap:8 }}>
-        <Skeleton height={14} width="75%" /><Skeleton height={11} width="50%" />
-        <Skeleton height={16} width="80px" /><Skeleton height={32} />
-      </div>
-    </div>
-  );
 }
 
 function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVista, onTogglePendiente, onRate, animDelay=0, prioritaria=false, filtros="" }) {
@@ -863,6 +852,12 @@ export default function App() {
     });
   },[series,decada,genero,busqueda,orden,ascendente,stats]);
 
+  // Al cambiar de sección el scroll debe volver arriba: si no, entras en
+  // el perfil a media página y parece que la vista ha saltado.
+  useEffect(()=>{
+    if (!matchSerie) window.scrollTo({ top: 0, behavior: "instant" });
+  },[location.pathname, matchSerie]);
+
   // Título del documento según la ruta: mejora el historial del
   // navegador, los marcadores y cómo se ve al compartir.
   useEffect(()=>{
@@ -875,6 +870,14 @@ export default function App() {
 
   const totalVistas=Object.values(vistas).filter(Boolean).length;
   const totalPendientes=Object.values(pendientes).filter(Boolean).length;
+
+  // Precarga: al pasar el ratón por una pestaña se descarga su código,
+  // así al pulsar ya está listo y no hay espera ni esqueleto.
+  const precargar = useCallback((to) => {
+    if (to.startsWith("/comunidad"))    import("./components/PerfilPublico.jsx");
+    if (to.startsWith("/estadisticas")) import("./components/Estadisticas.jsx");
+    if (to.startsWith("/perfil"))       import("./components/PerfilPublico.jsx");
+  }, []);
 
   const NAV=[
     {to:"/",             label:"📽️ Catálogo",  icono:"📽️", corto:"Catálogo",  end:true},
@@ -969,7 +972,7 @@ export default function App() {
             <h2 className="sr-only">Catálogo de series</h2>
 
             {!catalogLoaded
-              ?<div className="series-grid" aria-hidden="true">{Array(12).fill(0).map((_,i)=><CardSkeleton key={i}/>)}</div>
+              ?<EsqueletoCatalogo />
               :seriesFiltradas.length>0
                 ?<div className="series-grid">
                   {seriesFiltradas.map((serie,i)=>(
@@ -1014,6 +1017,8 @@ export default function App() {
           <nav aria-label="Navegación principal" className="nav-escritorio">
             {NAV.map(v=>(
               <NavLink key={v.to} to={v.to} end={v.end}
+                onMouseEnter={()=>precargar(v.to)}
+                onFocus={()=>precargar(v.to)}
                 className={({isActive})=>`nav-pill${isActive?" active":""}`}>
                 {v.label}
               </NavLink>
@@ -1039,6 +1044,7 @@ export default function App() {
       <nav aria-label="Navegación principal" className="nav-movil">
         {NAV.map(v=>(
           <NavLink key={v.to} to={v.to} end={v.end}
+            onTouchStart={()=>precargar(v.to)}
             className={({isActive})=>`nav-movil-item${isActive?" active":""}`}>
             <span className="nav-movil-icono" aria-hidden="true">{v.icono}</span>
             <span className="nav-movil-texto">{v.corto}</span>
@@ -1048,7 +1054,7 @@ export default function App() {
 
       <main id="contenido" className="contenido">
         <ErrorBoundary>
-        <Suspense fallback={<div className="skeleton" style={{ height:240 }}/>}>
+        <Suspense fallback={<EsqueletoRuta ruta={location.pathname} />}>
         <Routes>
           <Route path="/"             element={catalogo} />
           <Route path="/serie/:slug"  element={catalogo} />

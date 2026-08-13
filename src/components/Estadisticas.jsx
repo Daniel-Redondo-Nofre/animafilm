@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { fetchEstadisticas } from "../lib/listas";
 import { slugify } from "../lib/slug";
 import { useCambios, CAMBIO } from "../lib/eventos";
+import { EsqueletoStats } from "./Esqueletos.jsx";
 
 function Skeleton({ height = 20, width = "100%" }) {
   return <div className="skeleton" style={{ height, width }} />;
@@ -71,15 +72,7 @@ export default function Estadisticas() {
     </div>
   );
 
-  if (!datos) return (
-    <div className="page-enter">
-      <Skeleton height={44} width="45%" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12, margin: "1.5rem 0" }}>
-        {Array(5).fill(0).map((_, i) => <Skeleton key={i} height={90} />)}
-      </div>
-      <Skeleton height={260} />
-    </div>
-  );
+  if (!datos) return <div className="page-enter"><EsqueletoStats /></div>;
 
   const { generales: g, decadas, topNota, topVistas } = datos;
   const maxVistas = Math.max(1, ...decadas.map(d => Number(d.vistas)));
