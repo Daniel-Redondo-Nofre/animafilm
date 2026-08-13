@@ -1799,65 +1799,85 @@ body > * { position: relative; z-index: 1; }
 
 
 
+
 /* ═══════════════════════════════════════════════════════════════════════
    ESTRELLAS CON MEDIA NOTA
-   Cada estrella se dibuja dos veces: la de abajo apagada y la de arriba
-   recortada por ancho. Media estrella es media estrella real, no un
-   glifo distinto, así que el corte cae siempre en el mismo sitio.
+   Dibujadas en SVG: el glifo ★ de la fuente no está centrado en su caja,
+   así que recortarlo al 50 % dejaba la media descuadrada. Con un path
+   propio el corte cae exactamente en el eje.
    ═══════════════════════════════════════════════════════════════════════ */
-.estrellas-wrap {
-  display: inline-flex; align-items: center; gap: 7px;
-}
+.estrellas-wrap { display: inline-flex; align-items: center; gap: 8px; }
 
 .estrellas {
+  --estrella-on:    var(--amarillo);
+  --estrella-off:   transparent;
+  --estrella-borde: var(--border);
   display: inline-flex;
-  line-height: 1;
-  border-radius: 4px;
+  gap: 1px;
+  line-height: 0;
+  border-radius: 5px;
 }
 .estrellas:not(.solo-lectura) { cursor: pointer; }
-.estrellas:focus-visible { outline: 3px solid var(--border-focus); outline-offset: 3px; }
+.estrellas:focus-visible { outline: 3px solid var(--border-focus); outline-offset: 4px; }
+
+/* Las vacías se marcan menos que las llenas, pero siguen viéndose */
+.estrellas { --estrella-off: color-mix(in srgb, var(--border) 12%, transparent); }
+[data-theme="dark"] .estrellas { --estrella-off: color-mix(in srgb, var(--border) 16%, transparent); }
 
 .estrella {
-  position: relative;
   display: inline-block;
-  width: var(--tam);
-  height: var(--tam);
-  font-size: var(--tam);
-  line-height: 1;
+  line-height: 0;
   flex-shrink: 0;
 }
-.estrella-base,
-.estrella-llena {
-  position: absolute;
-  top: 0; left: 0;
-  height: 100%;
+.estrella-svg {
   display: block;
-  overflow: hidden;
-  white-space: nowrap;
+  overflow: visible;
+  transition: transform .16s cubic-bezier(.34,1.56,.64,1),
+              filter   .16s ease;
+  transform-origin: 50% 55%;
 }
-.estrella-base  { width: 100%; color: var(--border); opacity: .28; }
-.estrella-llena {
-  color: var(--amarillo);
-  /* Contorno de tinta, como el resto de la interfaz */
-  -webkit-text-stroke: 1px var(--border);
-  paint-order: stroke fill;
-  transition: width .08s ease;
+
+/* Al recorrerlas con el ratón, las marcadas se elevan un punto */
+.estrellas.tocando:not(.solo-lectura) .estrella:hover .estrella-svg,
+.estrellas.tocando:not(.solo-lectura) .estrella:hover ~ .estrella .estrella-svg {
+  transform: none;
 }
-[data-theme="dark"] .estrella-base  { opacity: .34; }
-[data-theme="dark"] .estrella-llena { filter: drop-shadow(0 0 4px rgba(255,201,60,.45)); }
+.estrellas:not(.solo-lectura):hover .estrella-svg {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.25));
+}
+.estrellas:not(.solo-lectura) .estrella:hover .estrella-svg {
+  transform: translateY(-2px) scale(1.12);
+}
 
-.estrellas:not(.solo-lectura):hover .estrella-llena { transition: none; }
+[data-theme="dark"] .estrella-svg { filter: drop-shadow(0 0 3px rgba(255,201,60,.3)); }
 
+/* ── Animación al puntuar: cascada de izquierda a derecha ── */
 @keyframes estrellaPop {
-  0%   { transform: scale(1)   rotate(0); }
-  40%  { transform: scale(1.3) rotate(-10deg); }
-  100% { transform: scale(1)   rotate(0); }
+  0%   { transform: scale(1)    rotate(0)      translateY(0); }
+  28%  { transform: scale(1.42) rotate(-14deg) translateY(-4px); }
+  55%  { transform: scale(.94)  rotate(7deg)   translateY(1px); }
+  78%  { transform: scale(1.08) rotate(-3deg)  translateY(-1px); }
+  100% { transform: scale(1)    rotate(0)      translateY(0); }
 }
-.estrella.pop { animation: estrellaPop .35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes estrellaBrillo {
+  0%   { filter: drop-shadow(0 0 0    rgba(255,214,0,0)); }
+  30%  { filter: drop-shadow(0 0 10px rgba(255,214,0,.85)); }
+  100% { filter: drop-shadow(0 0 0    rgba(255,214,0,0)); }
+}
+.estrella-svg.pop {
+  animation:
+    estrellaPop    .46s cubic-bezier(.34,1.56,.64,1) var(--retardo, 0ms) both,
+    estrellaBrillo .55s ease                          var(--retardo, 0ms) both;
+}
 
 .estrellas-numero {
   font-family: var(--font-display);
-  font-size: calc(var(--tam, 22px) * .82);
+  font-size: calc(var(--tam, 22px) * .8);
   color: var(--accent);
   line-height: 1;
+  min-width: 1.6em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estrella-svg, .estrella-svg.pop { animation: none; transition: none; }
 }
