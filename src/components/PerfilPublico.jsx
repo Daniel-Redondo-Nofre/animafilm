@@ -238,6 +238,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
           { v: perfil.valoraciones,  l: "valoradas" },
           { v: perfil.nota_media ?? "—", l: "nota media" },
           { v: perfil.resenas,       l: "reseñas" },
+          { v: perfil.likes_recibidos ?? 0, l: "me gusta" },
           { v: perfil.seguidores,    l: "seguidores" },
           { v: perfil.siguiendo,     l: "siguiendo" },
         ].map(x => (

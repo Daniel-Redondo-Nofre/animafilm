@@ -9,6 +9,7 @@ const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m
 import Portal from "./components/Portal.jsx";
 import Avatar from "./components/Avatar.jsx";
 import Estrellas, { EstrellasNota } from "./components/Estrellas.jsx";
+import { fetchResenas, darLike, quitarLike } from "./lib/resenas";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { fetchSeguidos, buscarUsuarios } from "./lib/social";
 const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
@@ -131,24 +132,55 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   const [loadingR, setLoadingR] = useState(true);
   const modalRef = useModal(onClose);
 
-  useEffect(()=>{
-    (async()=>{
-      setLoadingR(true);
-      const {data}=await supabase.from("reviews").select("*,profiles(username,display_name,avatar_emoji,avatar_color)").eq("serie_id",serie.id).order("created_at",{ascending:false});
-      setReviews(data||[]);
-      if(user) setMyReview((data||[]).find(r=>r.user_id===user.id)?.content||"");
+  const [orden, setOrden] = useState("populares");
+
+  const cargarResenas = useCallback(async ()=>{
+    setLoadingR(true);
+    try {
+      const data = await fetchResenas(serie.id, orden);
+      setReviews(data);
+      if(user) setMyReview(data.find(r=>r.user_id===user.id)?.content || "");
+    } catch {
+      setReviews([]);
+    } finally {
       setLoadingR(false);
-    })();
-  },[serie.id,user]);
+    }
+  },[serie.id, orden, user]);
+
+  useEffect(()=>{ cargarResenas(); },[cargarResenas]);
 
   const hasMyReview=reviews.some(r=>r.user_id===user?.id);
 
   const [guardando, setGuardando] = useState(false);
   const [mostrarListas, setMostrarListas] = useState(false);
 
-  async function recargarReseñas(){
-    const {data}=await supabase.from("reviews").select("*,profiles(username,display_name,avatar_emoji,avatar_color)").eq("serie_id",serie.id).order("created_at",{ascending:false});
-    setReviews(data||[]);
+  const recargarReseñas = cargarResenas;
+
+  // ── ME GUSTA ────────────────────────────────────────────────────────
+  // Optimista: el corazón responde al instante y se revierte si falla.
+  const [ocupadoLike, setOcupadoLike] = useState(null);
+
+  async function alternarLike(r){
+    if(!user){ onShowAuth?.(); return; }
+    if(r.user_id === user.id){ toast("No puedes dar me gusta a tu propia reseña.", "info"); return; }
+    if(ocupadoLike === r.id) return;
+
+    const teGustaba = r.me_gusta;
+    setOcupadoLike(r.id);
+    setReviews(prev => prev.map(x => x.id === r.id
+      ? { ...x, me_gusta: !teGustaba, likes: Number(x.likes) + (teGustaba ? -1 : 1) }
+      : x));
+
+    try {
+      teGustaba ? await quitarLike(r.id, user.id) : await darLike(r.id, user.id);
+    } catch (e) {
+      setReviews(prev => prev.map(x => x.id === r.id
+        ? { ...x, me_gusta: teGustaba, likes: Number(x.likes) + (teGustaba ? 1 : -1) }
+        : x));
+      toast.error(e.message || "No hemos podido registrar tu me gusta.");
+    } finally {
+      setOcupadoLike(null);
+    }
   }
 
   async function saveReview(){
@@ -251,7 +283,22 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
               🔗
             </button>
           </div>
-          <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:20, color:"var(--accent)", marginBottom:"1rem" }}>💬 Reseñas ({reviews.length})</h3>
+          <div className="resenas-cabecera">
+            <h3 className="font-display">💬 Reseñas ({reviews.length})</h3>
+            {reviews.length > 1 && (
+              <div className="resenas-orden" role="group" aria-label="Ordenar reseñas">
+                {[
+                  { id:"populares", label:"❤️ Populares" },
+                  { id:"recientes", label:"🕐 Recientes" },
+                  ...(user ? [{ id:"amigos", label:"👥 Seguidos" }] : []),
+                ].map(o=>(
+                  <button key={o.id} className={`sort-btn${orden===o.id?" active":""}`}
+                          aria-pressed={orden===o.id}
+                          onClick={()=>setOrden(o.id)}>{o.label}</button>
+                ))}
+              </div>
+            )}
+          </div>
           {user?(
             <div className="review-card" style={{ marginBottom:"1rem" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
@@ -291,14 +338,34 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
             ?Array(2).fill(0).map((_,i)=><div key={i} className="review-card" style={{ marginBottom:10 }}><Skeleton height={80}/></div>)
             :reviews.filter(r=>r.user_id!==user?.id).map(r=>(
               <div key={r.id} className="review-card animate-fadeUp" style={{ marginBottom:10 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  <Link to={`/u/${r.profiles?.username}`} aria-label={`Ver perfil de ${r.profiles?.username}`}><Avatar perfil={r.profiles} size={28}/></Link>
-                  <Link to={`/u/${r.profiles?.username}`} className="enlace-usuario">
-                    <span style={{ fontWeight:800, fontSize:13, color:"var(--text)" }}>{r.profiles?.display_name||r.profiles?.username}</span>
-                  </Link>
-                  <span style={{ fontSize:11, color:"var(--text-faint)" }}>{new Date(r.created_at).toLocaleDateString("es-ES")}</span>
+                <div className="resena-cabecera">
+                  <Link to={`/u/${r.username}`} aria-label={`Ver perfil de ${r.username}`}><Avatar perfil={r} size={30}/></Link>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <Link to={`/u/${r.username}`} className="enlace-usuario">
+                      <strong className="resena-autor">{r.display_name||r.username}</strong>
+                    </Link>
+                    <div className="resena-meta">
+                      {r.rating != null && <EstrellasNota nota={r.rating / 2} size={12} />}
+                      <span>{new Date(r.created_at).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"})}</span>
+                      {r.la_sigo && <span className="chip resena-sigo">Le sigues</span>}
+                    </div>
+                  </div>
                 </div>
-                <p style={{ fontSize:14, color:"var(--text-muted)", lineHeight:1.7 }}>{r.content}</p>
+
+                <p className="resena-texto">{r.content}</p>
+
+                <button
+                  className={`like-btn${r.me_gusta ? " activo" : ""}`}
+                  onClick={()=>alternarLike(r)}
+                  disabled={ocupadoLike === r.id}
+                  aria-pressed={!!r.me_gusta}
+                  aria-label={r.me_gusta
+                    ? `Quitar me gusta a la reseña de ${r.display_name||r.username}`
+                    : `Me gusta la reseña de ${r.display_name||r.username}`}
+                >
+                  <span className="like-icono" aria-hidden="true">{r.me_gusta ? "❤️" : "🤍"}</span>
+                  {Number(r.likes) > 0 && <span className="like-num">{r.likes}</span>}
+                </button>
               </div>
             ))
           }

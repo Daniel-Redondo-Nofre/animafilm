@@ -22,6 +22,7 @@ export function calcularInsignias(perfil, porDecada = []) {
   const media    = perfil?.nota_media != null ? Number(perfil.nota_media) : null;
   const siguiendo= n(perfil?.siguiendo);
   const seguidores = n(perfil?.seguidores);
+  const likes      = n(perfil?.likes_recibidos);
 
   // ── Décadas completadas ──
   porDecada.forEach(d => {
@@ -62,6 +63,9 @@ export function calcularInsignias(perfil, porDecada = []) {
   // ── Comunidad ──
   if (siguiendo >= 5)  out.push({ id:"sociable", icono:"🤝", nombre:"Sociable", desc:"Sigue a 5 personas o más", rango:"plata" });
   if (seguidores >= 5) out.push({ id:"popular",  icono:"📣", nombre:"Popular",  desc:"5 seguidores o más", rango:"oro" });
+
+  if (likes >= 25)      out.push({ id:"pluma",    icono:"🖋️", nombre:"Pluma de oro", desc:`${likes} me gusta en sus reseñas`, rango:"oro" });
+  else if (likes >= 10) out.push({ id:"leido",    icono:"❤️", nombre:"Se le lee",    desc:`${likes} me gusta en sus reseñas`, rango:"plata" });
 
   return out;
 }
