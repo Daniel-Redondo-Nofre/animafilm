@@ -345,12 +345,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                       <strong className="resena-autor">{r.display_name||r.username}</strong>
                     </Link>
                     <div className="resena-meta">
-                      {r.rating != null && (
-                        <>
-                          <EstrellasNota nota={r.rating / 2} size={13} />
-                          <span className="resena-sep" aria-hidden="true">·</span>
-                        </>
-                      )}
+                      {r.rating != null && <EstrellasNota nota={r.rating / 2} size={13} />}
                       <span>{new Date(r.created_at).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"})}</span>
                       {r.la_sigo && <span className="chip resena-sigo">Le sigues</span>}
                     </div>
