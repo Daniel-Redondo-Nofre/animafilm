@@ -2211,3 +2211,6 @@ body > * { position: relative; z-index: 1; }
   .diario-poster { width: 32px; }
   .diario-serie  { font-size: 13px; }
 }
+
+/* Fila de acciones de una reseña */
+.resena-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }

@@ -386,6 +386,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                   );
                 })()}
 
+                <div className="resena-acciones">
                 <button
                   className={`like-btn${r.me_gusta ? " activo" : ""}`}
                   onClick={()=>alternarLike(r)}
@@ -400,6 +401,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
                   </svg>
                   <span className="like-num">{Number(r.likes) > 0 ? r.likes : "Me gusta"}</span>
                 </button>
+                </div>
               </div>
             ))
           }
@@ -429,6 +431,16 @@ function Feed({ user, onShowAuth, series }) {
   const [hallados, setHallados] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Se declara antes de los efectos que lo usan: useState no se eleva
+  // como una función, y usarlo arriba rompía el componente al montar.
+  const [recarga, setRecarga] = useState(0);
+
+  // Cualquier actividad de la comunidad afecta al feed
+  useCambios(
+    [CAMBIO.ACTIVIDAD, CAMBIO.RESENA, CAMBIO.SEGUIMIENTO, CAMBIO.PERFIL],
+    useCallback(()=>setRecarga(n=>n+1), [])
+  );
+
   // A quién sigue el usuario: hace falta para filtrar el feed
   useEffect(()=>{
     if(!user){ setSeguidos([]); return; }
@@ -441,13 +453,6 @@ function Feed({ user, onShowAuth, series }) {
     const t = setTimeout(()=>{ buscarUsuarios(busca).then(setHallados); }, 320);
     return ()=>clearTimeout(t);
   },[busca]);
-
-  const [recarga, setRecarga] = useState(0);
-  // Cualquier actividad de la comunidad afecta al feed
-  useCambios(
-    [CAMBIO.ACTIVIDAD, CAMBIO.RESENA, CAMBIO.SEGUIMIENTO, CAMBIO.PERFIL],
-    useCallback(()=>setRecarga(n=>n+1), [])
-  );
 
   useEffect(()=>{
     if(ambito==="siguiendo" && seguidos===null) return;
