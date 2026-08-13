@@ -350,7 +350,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
             {seriesVistas.map(s => (
               <Link key={s.id} to={`/serie/${slugify(s.titulo)}`} className="serie-pill" style={{ background: s.color }}>
                 {s.titulo}
-                {coleccion.notas[s.id] && <em>{coleccion.notas[s.id]}★</em>}
+                {coleccion.notas[s.id] && <em>{(coleccion.notas[s.id] / 2).toFixed(1).replace(".0","")}★</em>}
               </Link>
             ))}
           </div>

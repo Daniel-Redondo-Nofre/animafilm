@@ -8,6 +8,7 @@ const EditarPerfil  = lazy(() => import("./components/GestionCuenta.jsx").then(m
 const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 import Portal from "./components/Portal.jsx";
 import Avatar from "./components/Avatar.jsx";
+import Estrellas, { EstrellasNota } from "./components/Estrellas.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { fetchSeguidos, buscarUsuarios } from "./lib/social";
 const PerfilPublico = lazy(() => import("./components/PerfilPublico.jsx"));
@@ -35,29 +36,6 @@ const ORDENES = [
   { id:"vistas",  label:"Más vistas", icon:"👁️" },
   { id:"titulo",  label:"A-Z",        icon:"🔤" },
 ];
-
-function StarRating({ rating, onRate, size=18, readonly=false }) {
-  const [hover, setHover] = useState(0);
-  const [lastClicked, setLC] = useState(null);
-  return (
-    <div style={{ display:"flex", gap:1 }}
-         role={readonly ? undefined : "radiogroup"}
-         aria-label={readonly ? undefined : "Tu valoración, de 1 a 5 estrellas"}>
-      {[1,2,3,4,5].map(i => (
-        <button key={i}
-          className={`star-btn${lastClicked===i?" active":""}`}
-          onClick={readonly?undefined:(e)=>{ e.stopPropagation(); setLC(i); setTimeout(()=>setLC(null),400); onRate(i===rating?0:i); }}
-          onMouseEnter={readonly?undefined:()=>setHover(i)}
-          onMouseLeave={readonly?undefined:()=>setHover(0)}
-          style={{ fontSize:size, width:size*1.2, height:size*1.2, cursor:readonly?"default":"pointer" }}
-          role={readonly ? undefined : "radio"}
-          aria-checked={i === rating}
-          aria-label={`${i} ${i>1?"estrellas":"estrella"}${i===rating?" (tu valoración actual)":""}`}
-        ><span className={i<=(hover||rating)?"star-on":"star-off"}>⭐</span></button>
-      ))}
-    </div>
-  );
-}
 
 function Skeleton({ width="100%", height=20, style={} }) {
   return <div className="skeleton" style={{ width, height, ...style }} />;
@@ -108,7 +86,7 @@ function SerieCard({ serie, poster, stats, vista, pendiente, rating, onToggleVis
             </span>
           )}
         </div>
-        <div style={{ marginBottom:9 }}><StarRating rating={rating} onRate={onRate} size={15} /></div>
+        <div style={{ marginBottom:9 }}><Estrellas valor={rating} onChange={onRate} size={15} /></div>
         <div style={{ display:"flex", gap:6 }}>
           <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"5px 0", fontSize:11, borderRadius:8 }}
                   aria-pressed={vista}
@@ -246,6 +224,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
               </div>
               <div className="community-detail">
                 <strong>Nota de la comunidad</strong>
+                <EstrellasNota nota={stats.nota_media} size={14} />
                 <span>
                   {stats.votos} {stats.votos===1?"voto":"votos"}
                   {stats.vistas_totales>0 && ` · ${stats.vistas_totales} la han visto`}
@@ -256,8 +235,8 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
 
           <div style={{ marginBottom:"1.2rem" }}>
             <p style={{ fontWeight:800, fontSize:11, color:"var(--accent)", marginBottom:10, letterSpacing:1.5, textTransform:"uppercase" }}>Tu valoración</p>
-            <StarRating rating={rating} onRate={onRate} size={28}/>
-            {rating>0&&<p style={{ fontSize:13, color:"var(--text-muted)", marginTop:8 }}>{rating}/5 estrellas</p>}
+            <Estrellas valor={rating} onChange={onRate} size={30} mostrarNumero />
+            {rating>0&&<p style={{ fontSize:12, color:"var(--text-faint)", marginTop:7, fontWeight:700 }}>Pulsa la mitad izquierda de una estrella para media nota</p>}
           </div>
           <div style={{ display:"flex", gap:10, marginBottom:"2rem" }}>
             <button className={vista?"btn btn-primary":"btn btn-secondary"} style={{ flex:1, padding:"11px 0", fontSize:14 }} onClick={onToggleVista}>{vista?"✓ Ya la he visto":"Marcar como vista"}</button>
@@ -449,7 +428,7 @@ function Feed({ user, onShowAuth, series }) {
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, color:"var(--text)", lineHeight:1.6 }}>
                     <Link to={`/u/${item.profiles?.username}`} className="enlace-usuario"><strong>{name}</strong></Link>{" "}
-                    {item.type==="rating"&&<>ha puntuado <Link to={`/serie/${slugify(serie.titulo)}`} className="enlace-usuario"><strong>{serie.titulo}</strong></Link> con {"⭐".repeat(item.rating)}</>}
+                    {item.type==="rating"&&<>ha puntuado <Link to={`/serie/${slugify(serie.titulo)}`} className="enlace-usuario"><strong>{serie.titulo}</strong></Link> con <EstrellasNota nota={item.rating / 2} size={13} /></>}
                     {item.type==="watch"&&<>ha marcado <Link to={`/serie/${slugify(serie.titulo)}`} className="enlace-usuario"><strong>{serie.titulo}</strong></Link> como vista ✅</>}
                     {item.type==="review"&&<>ha reseñado <Link to={`/serie/${slugify(serie.titulo)}`} className="enlace-usuario"><strong>{serie.titulo}</strong></Link>: <em style={{ color:"var(--text-muted)" }}>"{item.content?.slice(0,90)}{item.content?.length>90?"…":""}"</em></>}
                   </div>

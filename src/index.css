@@ -395,31 +395,6 @@ body > * { position: relative; z-index: 1; }
 .genre-chip:hover { transform: translateY(-2px) rotate(-1deg); background: var(--amarillo); color: #0D0D0D; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ESTRELLAS
-   ═══════════════════════════════════════════════════════════════════════ */
-.star-btn {
-  background: none; border: none; cursor: pointer;
-  padding: 0; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center;
-  /* Tamaño fijo: nunca cambia al pasar por encima, así no baila la fila */
-  flex: 0 0 auto;
-}
-.star-btn span {
-  line-height: 1;
-  transition: filter .13s ease, opacity .13s ease;
-}
-/* Estrella puntuada: a todo color */
-.star-on  { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
-/* Estrella vacía: mismo glifo desaturado. Se ve en ambos temas
-   porque el brillo se ajusta al fondo de cada uno. */
-.star-off { filter: grayscale(1) brightness(.62) contrast(.9); opacity: .55; }
-[data-theme="dark"] .star-off { filter: grayscale(1) brightness(2.1) contrast(.75); opacity: .45; }
-[data-theme="dark"] .star-on  { filter: drop-shadow(0 0 5px rgba(255,201,60,.55)); }
-
-.star-btn:hover .star-off { opacity: .85; }
-.star-btn.active { animation: starPop .35s cubic-bezier(.34,1.56,.64,1); }
-
-/* ═══════════════════════════════════════════════════════════════════════
    AVATAR
    ═══════════════════════════════════════════════════════════════════════ */
 .avatar {
@@ -1823,3 +1798,66 @@ body > * { position: relative; z-index: 1; }
 }
 
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ESTRELLAS CON MEDIA NOTA
+   Cada estrella se dibuja dos veces: la de abajo apagada y la de arriba
+   recortada por ancho. Media estrella es media estrella real, no un
+   glifo distinto, así que el corte cae siempre en el mismo sitio.
+   ═══════════════════════════════════════════════════════════════════════ */
+.estrellas-wrap {
+  display: inline-flex; align-items: center; gap: 7px;
+}
+
+.estrellas {
+  display: inline-flex;
+  line-height: 1;
+  border-radius: 4px;
+}
+.estrellas:not(.solo-lectura) { cursor: pointer; }
+.estrellas:focus-visible { outline: 3px solid var(--border-focus); outline-offset: 3px; }
+
+.estrella {
+  position: relative;
+  display: inline-block;
+  width: var(--tam);
+  height: var(--tam);
+  font-size: var(--tam);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.estrella-base,
+.estrella-llena {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.estrella-base  { width: 100%; color: var(--border); opacity: .28; }
+.estrella-llena {
+  color: var(--amarillo);
+  /* Contorno de tinta, como el resto de la interfaz */
+  -webkit-text-stroke: 1px var(--border);
+  paint-order: stroke fill;
+  transition: width .08s ease;
+}
+[data-theme="dark"] .estrella-base  { opacity: .34; }
+[data-theme="dark"] .estrella-llena { filter: drop-shadow(0 0 4px rgba(255,201,60,.45)); }
+
+.estrellas:not(.solo-lectura):hover .estrella-llena { transition: none; }
+
+@keyframes estrellaPop {
+  0%   { transform: scale(1)   rotate(0); }
+  40%  { transform: scale(1.3) rotate(-10deg); }
+  100% { transform: scale(1)   rotate(0); }
+}
+.estrella.pop { animation: estrellaPop .35s cubic-bezier(.34,1.56,.64,1); }
+
+.estrellas-numero {
+  font-family: var(--font-display);
+  font-size: calc(var(--tam, 22px) * .82);
+  color: var(--accent);
+  line-height: 1;
+}
