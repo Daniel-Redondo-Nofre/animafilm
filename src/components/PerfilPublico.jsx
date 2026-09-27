@@ -17,6 +17,7 @@ const MisListas    = lazy(() => import("./Listas.jsx").then(m => ({ default: m.M
 const Personalizar  = lazy(() => import("./Personalizar.jsx"));
 const Diario        = lazy(() => import("./Diario.jsx"));
 const Actividad     = lazy(() => import("./Actividad.jsx"));
+const ResumenAnual  = lazy(() => import("./ResumenAnual.jsx"));
 const EditarPerfil  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.EditarPerfil })));
 const BorrarCuenta  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 
@@ -325,6 +326,7 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
       <div className="sort-bar" role="tablist" style={{ marginTop: "1.8rem" }}>
         {[
           { id: "diario",  label: "📅 Diario" },
+          { id: "anual",   label: "🗓️ Mi año" },
           { id: "vistas",  label: `📺 Vistas (${seriesVistas.length})` },
           { id: "resenas", label: `💬 Reseñas (${resenas.length})` },
           { id: "listas",  label: "📋 Listas" },
@@ -338,7 +340,12 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
       </div>
 
       {/* ── Contenido ── */}
-      {pestana === "diario" ? (
+      {pestana === "anual" ? (
+        <Suspense fallback={<div className="skeleton" style={{ height:220, marginTop:"1rem" }}/>}>
+          <ResumenAnual userId={perfil.id} esMio={esMiPerfil}
+                        nombre={perfil.display_name || perfil.username} />
+        </Suspense>
+      ) : pestana === "diario" ? (
         <Suspense fallback={<div className="skeleton" style={{ height:160, marginTop:"1rem" }}/>}>
           <Diario userId={perfil.id} esMio={esMiPerfil} />
         </Suspense>

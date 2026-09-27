@@ -77,3 +77,33 @@ function traducir(error) {
   if (m.includes("diario_fecha_valida"))          return "Esa fecha no es válida.";
   return error?.message || "No hemos podido guardar el visionado.";
 }
+
+// ── RESUMEN ANUAL ─────────────────────────────────────────────────────
+
+export async function fetchAniosConActividad(userId) {
+  const { data } = await supabase.rpc("anios_con_actividad", { usuario: userId });
+  return data ?? [];
+}
+
+/**
+ * Todo el resumen de un año en una llamada: cifras, desglose mensual y
+ * las series mejor valoradas.
+ */
+export async function fetchResumenAnual(userId, anio) {
+  const [resumen, meses, mejores] = await Promise.all([
+    supabase.rpc("resumen_anual",    { usuario: userId, p_anio: anio }),
+    supabase.rpc("meses_del_anio",   { usuario: userId, p_anio: anio }),
+    supabase.rpc("mejores_del_anio", { usuario: userId, p_anio: anio, limite: 8 }),
+  ]);
+
+  return {
+    resumen: resumen.data?.[0] ?? null,
+    meses:   meses.data ?? [],
+    // El orden por nota se hace aquí: en SQL chocaba con el DISTINCT ON,
+    // que obliga a ordenar primero por la columna que desduplica.
+    mejores: (mejores.data ?? [])
+      .filter(m => m.rating != null)
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 5),
+  };
+}
