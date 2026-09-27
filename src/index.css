@@ -2517,3 +2517,85 @@ body > * { position: relative; z-index: 1; }
   .dist-nota   { font-size: 28px; }
   .dist-valor  { font-size: 8px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACTIVIDAD RECIENTE
+   ═══════════════════════════════════════════════════════════════════════ */
+.actividad { margin-bottom: 1.4rem; }
+.actividad h2 { font-size: 18px; color: var(--accent); margin-bottom: 10px; }
+
+.act-lista {
+  list-style: none; margin: 0; padding: 0;
+  background: var(--bg-card);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+}
+
+.act-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 14px;
+  border-bottom: 2px dotted color-mix(in srgb, var(--border) 40%, transparent);
+  transition: background-color var(--t-fast);
+}
+.act-item:last-child { border-bottom: none; }
+.act-item:hover { background: var(--bg-muted); }
+
+.act-icono {
+  font-size: 15px; line-height: 1;
+  width: 20px; flex-shrink: 0; text-align: center;
+}
+
+.act-poster {
+  width: 30px; flex-shrink: 0;
+  aspect-ratio: 2 / 3;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  display: block;
+}
+.act-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.act-cuerpo { flex: 1; min-width: 0; }
+.act-texto {
+  font-size: 13px; color: var(--text-muted); font-weight: 700;
+  line-height: 1.5;
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+.act-texto strong { color: var(--text); }
+.act-cita {
+  display: block;
+  width: 100%;
+  font-style: italic;
+  font-size: 12px; color: var(--text-faint);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+.act-fecha {
+  display: block;
+  font-size: 11px; color: var(--text-faint); font-weight: 700;
+  margin-top: 2px;
+}
+
+.act-mas {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 0;
+  background: none;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 13px; letter-spacing: .04em;
+  cursor: pointer;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.act-mas:hover { border-color: var(--accent); color: var(--accent); }
+
+@media (max-width: 620px) {
+  .act-item   { padding: 9px 11px; gap: 9px; }
+  .act-poster { width: 26px; }
+  .act-texto  { font-size: 12.5px; }
+}

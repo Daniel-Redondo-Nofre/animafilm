@@ -136,3 +136,19 @@ export async function compararCon(otroId) {
     afinidad,
   };
 }
+
+// ── ACTIVIDAD RECIENTE ────────────────────────────────────────────────
+
+/**
+ * Línea de tiempo de un usuario: visionados, valoraciones, reseñas,
+ * listas y seguimientos mezclados y ordenados por fecha.
+ */
+export async function fetchActividad(userId, limite = 12) {
+  if (!userId) return [];
+  const { data, error } = await supabase.rpc("actividad_de", {
+    usuario: userId,
+    limite,
+  });
+  if (error) return [];
+  return data ?? [];
+}

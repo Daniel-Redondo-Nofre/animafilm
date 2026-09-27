@@ -16,6 +16,7 @@ import { poster as posterTam } from "../lib/series";
 const MisListas    = lazy(() => import("./Listas.jsx").then(m => ({ default: m.MisListas })));
 const Personalizar  = lazy(() => import("./Personalizar.jsx"));
 const Diario        = lazy(() => import("./Diario.jsx"));
+const Actividad     = lazy(() => import("./Actividad.jsx"));
 const EditarPerfil  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.EditarPerfil })));
 const BorrarCuenta  = lazy(() => import("./GestionCuenta.jsx").then(m => ({ default: m.BorrarCuenta })));
 
@@ -238,6 +239,11 @@ export default function PerfilPublico({ user, series, onShowAuth, onProfileUpdat
           </div>
         ))}
       </div>
+
+      {/* ── Actividad reciente ── */}
+      <Suspense fallback={<div className="skeleton" style={{ height:130, marginBottom:"1.4rem" }}/>}>
+        <Actividad userId={perfil.id} nombre={perfil.display_name || perfil.username} />
+      </Suspense>
 
       {/* ── Progreso por década ── */}
       {porDecada.length > 0 && Number(perfil.vistas) > 0 && (
