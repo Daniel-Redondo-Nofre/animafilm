@@ -18,6 +18,7 @@ export async function fetchResenas(serieId, orden = "populares", opciones = {}) 
     p_limite: opciones.limite ?? 30,
     p_solo_seguidos:    opciones.soloSeguidos    ?? false,
     p_excluir_seguidos: opciones.excluirSeguidos ?? false,
+    p_etiqueta:         opciones.etiqueta        ?? null,
   });
   if (error) throw new Error(error.message);
   return data ?? [];
@@ -80,4 +81,37 @@ function traducirComentario(error) {
   if (m.includes("demasiado en poco tiempo")) return "Has comentado demasiado seguido. Espera un rato.";
   if (m.includes("comentario_len"))           return "El comentario debe tener entre 1 y 600 caracteres.";
   return error?.message || "No hemos podido publicar el comentario.";
+}
+
+// ── ETIQUETAS ─────────────────────────────────────────────────────────
+
+/** Las más usadas de toda la aplicación, para sugerir al escribir */
+export async function fetchEtiquetasPopulares(limite = 12) {
+  const { data } = await supabase.rpc("etiquetas_populares", { limite });
+  return data ?? [];
+}
+
+/** Las usadas al reseñar una serie concreta, para filtrar en su ficha */
+export async function fetchEtiquetasDeSerie(serieId) {
+  const { data } = await supabase.rpc("etiquetas_de_serie", { p_serie: serieId });
+  return data ?? [];
+}
+
+/**
+ * Reemplaza todas las etiquetas de una reseña.
+ * Borrar y reinsertar es más simple que calcular diferencias, y con un
+ * máximo de cinco el coste es irrelevante.
+ */
+export async function guardarEtiquetas(reviewId, userId, nombres) {
+  await supabase.from("etiquetas").delete().eq("review_id", reviewId);
+
+  const limpias = [...new Set(nombres.map(n => n.trim()).filter(n => n.length >= 2))].slice(0, 5);
+  if (limpias.length === 0) return;
+
+  const { error } = await supabase.from("etiquetas").insert(
+    // `slug` lo rellena el trigger, pero la columna es NOT NULL: se
+    // manda un valor provisional que el servidor sobrescribe.
+    limpias.map(nombre => ({ review_id: reviewId, user_id: userId, nombre, slug: "x" }))
+  );
+  if (error) throw new Error(error.message);
 }

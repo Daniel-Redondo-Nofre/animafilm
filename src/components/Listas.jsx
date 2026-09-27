@@ -336,6 +336,8 @@ export default function DetalleLista({ user, series }) {
                 <strong>{lista.display_name || lista.username}</strong>
               </Link>
               {!lista.publica && " · 🔒 privada"}
+              {Number(lista.guardados) > 0 &&
+                ` · 🔖 ${lista.guardados} ${Number(lista.guardados) === 1 ? "persona la ha guardado" : "personas la han guardado"}`}
             </p>
             {lista.descripcion && (
               <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 700, marginTop: 10, lineHeight: 1.6, maxWidth: 560 }}>

@@ -2758,3 +2758,217 @@ body > * { position: relative; z-index: 1; }
 @media (max-width: 420px) {
   .anual-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LISTAS DE LA COMUNIDAD
+   ═══════════════════════════════════════════════════════════════════════ */
+.lc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 13px;
+}
+
+.lc-card {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--bg-card);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform .2s cubic-bezier(.2,.9,.3,1),
+              box-shadow .2s cubic-bezier(.2,.9,.3,1),
+              border-color .18s ease;
+}
+.lc-card:hover {
+  transform: translate(-2px,-4px);
+  box-shadow: var(--sh-card-hover);
+  border-color: var(--accent);
+}
+
+/* ── Mosaico de portadas ── */
+.lc-portada {
+  display: grid;
+  height: 104px;
+  background: var(--bg-muted);
+  border-bottom: var(--border-w) solid var(--border);
+  overflow: hidden;
+}
+.lc-portada img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* El reparto cambia según cuántos pósters haya: con dos, media y media;
+   con tres o cuatro, en cuadrícula. Un hueco vacío delataría la falta. */
+.lc-portada.huecos-1 { grid-template-columns: 1fr; }
+.lc-portada.huecos-2 { grid-template-columns: repeat(2, 1fr); }
+.lc-portada.huecos-3 { grid-template-columns: repeat(3, 1fr); }
+.lc-portada.huecos-4 { grid-template-columns: repeat(4, 1fr); }
+.lc-portada.huecos-0 {
+  display: flex; align-items: center; justify-content: center;
+}
+.lc-sin-portada { font-size: 32px; opacity: .4; }
+
+/* ── Cuerpo ── */
+.lc-cuerpo {
+  flex: 1;
+  display: flex; flex-direction: column;
+  padding: 11px 13px 12px;
+  gap: 5px;
+}
+.lc-nombre {
+  font-size: 14.5px; color: var(--text);
+  line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.lc-desc {
+  font-size: 12px; color: var(--text-muted); font-weight: 700;
+  line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.lc-pie {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  margin-top: auto; padding-top: 8px;
+  font-size: 11.5px; color: var(--text-muted); font-weight: 700;
+}
+.lc-autor {
+  display: flex; align-items: center; gap: 6px;
+  min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lc-autor .avatar { border-width: 2px; box-shadow: 1px 1px 0 var(--border); }
+.lc-num { flex-shrink: 0; color: var(--text-faint); }
+
+/* ── Botón de guardar ── */
+.lc-guardar {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 800; font-size: 11px;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform .16s cubic-bezier(.2,.9,.3,1),
+              background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.lc-guardar:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+.lc-guardar:disabled { opacity: .55; cursor: wait; }
+.lc-guardar.activo {
+  background: color-mix(in srgb, var(--accent2) 14%, var(--bg-card));
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+
+@media (max-width: 620px) {
+  .lc-grid    { grid-template-columns: 1fr; }
+  .lc-portada { height: 88px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ETIQUETAS EN RESEÑAS
+   ═══════════════════════════════════════════════════════════════════════ */
+.etq { margin-top: 11px; }
+.etq-cuenta {
+  font-style: normal;
+  color: var(--text-faint);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.etq-puestas {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.etq-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 800; font-size: 11.5px;
+  line-height: 1.5;
+}
+.etq-chip em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* Puesta: la lleva esta reseña, y se puede quitar */
+.etq-chip.puesta {
+  background: color-mix(in srgb, var(--accent2) 14%, var(--bg-card));
+  border-color: var(--accent2);
+  color: var(--accent2);
+  padding-right: 4px;
+}
+.etq-chip.puesta button {
+  background: none; border: none; cursor: pointer;
+  color: inherit; font-size: 11px;
+  padding: 1px 4px; border-radius: 50%;
+  line-height: 1;
+}
+.etq-chip.puesta button:hover { background: var(--accent2); color: var(--accent2-fg); }
+
+/* Sugerida: se puede añadir con un clic */
+.etq-chip.sugerida {
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: transform .16s cubic-bezier(.2,.9,.3,1),
+              border-color .16s ease, color .16s ease;
+}
+.etq-chip.sugerida:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+
+/* Filtro: acota las reseñas mostradas */
+.etq-chip.filtro {
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: transform .16s cubic-bezier(.2,.9,.3,1),
+              background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.etq-chip.filtro:hover { transform: translateY(-2px); border-color: var(--accent); }
+.etq-chip.filtro.activo {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: 2px 2px 0 var(--border);
+}
+.etq-chip.filtro.activo em { color: inherit; opacity: .75; }
+
+.etq-campo { font-size: 13px; padding: 8px 14px; }
+
+.etq-sugeridas {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.etq-filtro {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding-bottom: 9px;
+  border-bottom: 2px dotted color-mix(in srgb, var(--border) 45%, transparent);
+}
+
+@media (max-width: 620px) {
+  .etq-filtro {
+    flex-wrap: nowrap; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 11px;
+  }
+  .etq-filtro::-webkit-scrollbar { display: none; }
+  .etq-filtro > * { flex: 0 0 auto; }
+}

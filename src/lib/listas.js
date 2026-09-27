@@ -127,3 +127,35 @@ export async function fetchEstadisticas() {
     topVistas: topVistas.data ?? [],
   };
 }
+
+// ── LISTAS DE LA COMUNIDAD ────────────────────────────────────────────
+
+/**
+ * Listas públicas para descubrir.
+ * @param {"populares"|"recientes"|"guardadas"} orden
+ */
+export async function fetchListasComunidad(orden = "populares", limite = 24) {
+  const { data, error } = await supabase.rpc("listas_comunidad", {
+    p_orden: orden,
+    p_limite: limite,
+  });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function guardarLista(listaId, userId) {
+  const { error } = await supabase
+    .from("lista_guardada")
+    .insert({ lista_id: listaId, user_id: userId });
+  // 23505 = ya estaba guardada; la clave compuesta lo impide por diseño
+  if (error && error.code !== "23505") throw new Error(error.message);
+}
+
+export async function quitarGuardada(listaId, userId) {
+  const { error } = await supabase
+    .from("lista_guardada")
+    .delete()
+    .eq("lista_id", listaId)
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+}

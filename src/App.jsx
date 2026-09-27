@@ -9,7 +9,8 @@ const BorrarCuenta  = lazy(() => import("./components/GestionCuenta.jsx").then(m
 import Portal from "./components/Portal.jsx";
 import Avatar from "./components/Avatar.jsx";
 import Estrellas, { EstrellasNota } from "./components/Estrellas.jsx";
-import { fetchResenas, darLike, quitarLike } from "./lib/resenas";
+import { fetchResenas, darLike, quitarLike, guardarEtiquetas, fetchEtiquetasDeSerie } from "./lib/resenas";
+const Etiquetas = lazy(() => import("./components/Etiquetas.jsx"));
 const Distribucion = lazy(() => import("./components/Distribucion.jsx"));
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { EsqueletoRuta, EsqueletoCatalogo } from "./components/Esqueletos.jsx";
@@ -20,6 +21,7 @@ const Estadisticas  = lazy(() => import("./components/Estadisticas.jsx"));
 const AnadirALista  = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.AnadirALista })));
 const ApuntarVisionado = lazy(() => import("./components/Diario.jsx").then(m => ({ default: m.ApuntarVisionado })));
 const Comentarios      = lazy(() => import("./components/Comentarios.jsx"));
+const ListasComunidad  = lazy(() => import("./components/ListasComunidad.jsx"));
 const MisListas     = lazy(() => import("./components/Listas.jsx").then(m => ({ default: m.MisListas })));
 import { useModal } from "./lib/useModal";
 import { Toasts, toast, mensajeDeError } from "./lib/toast.jsx";
@@ -153,6 +155,12 @@ function TarjetaResena({
         </>
       )}
 
+      {r.etiquetas?.length > 0 && (
+        <div className="etq-puestas" style={{ marginTop:9 }}>
+          {r.etiquetas.map(n => <span key={n} className="etq-chip">{n}</span>)}
+        </div>
+      )}
+
       <div className="resena-acciones">
         <button
           className={`like-btn${r.me_gusta ? " activo" : ""}`}
@@ -233,6 +241,9 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
   const [orden, setOrden] = useState("populares");
   const [deSeguidos, setDeSeguidos] = useState([]);
   const [spoiler, setSpoiler] = useState(false);
+  const [misEtiquetas, setMisEtiquetas] = useState([]);
+  const [etqSerie, setEtqSerie] = useState([]);
+  const [filtroEtq, setFiltroEtq] = useState(null);
   // Reseñas con spoiler ya reveladas
   const [reveladas, setReveladas] = useState(() => new Set());
 
@@ -242,21 +253,26 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
       // Con sesión, las de quienes sigues van aparte y se excluyen del
       // resto: si no, aparecerían duplicadas en las dos listas.
       const [general, seguidos] = await Promise.all([
-        fetchResenas(serie.id, orden, { excluirSeguidos: !!user }),
-        user ? fetchResenas(serie.id, "populares", { soloSeguidos: true, limite: 6 }) : [],
+        fetchResenas(serie.id, orden, { excluirSeguidos: !!user, etiqueta: filtroEtq }),
+        user ? fetchResenas(serie.id, "populares", { soloSeguidos: true, limite: 6, etiqueta: filtroEtq }) : [],
       ]);
       setReviews(general);
       setDeSeguidos(seguidos);
       const mia = general.find(r=>r.user_id===user?.id);
-      if(user){ setMyReview(mia?.content || ""); setSpoiler(!!mia?.spoiler); }
+      if(user){ setMyReview(mia?.content || ""); setSpoiler(!!mia?.spoiler); setMisEtiquetas(mia?.etiquetas ?? []); }
     } catch {
       setReviews([]); setDeSeguidos([]);
     } finally {
       setLoadingR(false);
     }
-  },[serie.id, orden, user]);
+  },[serie.id, orden, user, filtroEtq]);
 
   useEffect(()=>{ cargarResenas(); },[cargarResenas]);
+
+  // Etiquetas usadas al reseñar esta serie, para poder filtrar por ellas
+  useEffect(()=>{
+    fetchEtiquetasDeSerie(serie.id).then(setEtqSerie).catch(()=>setEtqSerie([]));
+  },[serie.id, loadingR]);
 
   const hasMyReview=reviews.some(r=>r.user_id===user?.id);
 
@@ -309,6 +325,16 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
     setGuardando(false);
 
     if(error){ toast.error(mensajeDeError(error)); return; }
+
+    // Las etiquetas necesitan el id de la reseña, que solo se conoce
+    // después del upsert.
+    try {
+      const { data: mia } = await supabase.from("reviews").select("id")
+        .eq("user_id", user.id).eq("serie_id", serie.id).maybeSingle();
+      if (mia?.id) await guardarEtiquetas(mia.id, user.id, misEtiquetas);
+    } catch (e) {
+      toast("La reseña se guardó, pero las etiquetas no.", "info");
+    }
 
     setEditing(false);
     toast.ok("Reseña publicada");
@@ -439,6 +465,9 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
               {editing||!hasMyReview?(
                 <>
                   <textarea className="textarea" value={myReview} onChange={e=>setMyReview(e.target.value)} placeholder="¿Qué recuerdas? ¿La veías con alguien especial?" rows={3}/>
+                  <Suspense fallback={null}>
+                    <Etiquetas valor={misEtiquetas} onChange={setMisEtiquetas} />
+                  </Suspense>
                   <label className="spoiler-check">
                     <input type="checkbox" checked={spoiler} onChange={e=>setSpoiler(e.target.checked)} />
                     <span>⚠️ Contiene spoilers</span>
@@ -451,6 +480,11 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
               ):(
                 <>
                   <p style={{ fontSize:14, color:"var(--text-muted)", lineHeight:1.7 }}>{myReview}</p>
+                  {misEtiquetas.length > 0 && (
+                    <div className="etq-puestas" style={{ marginTop:8 }}>
+                      {misEtiquetas.map(n => <span key={n} className="etq-chip">{n}</span>)}
+                    </div>
+                  )}
                   <div style={{ display:"flex", gap:8, marginTop:10 }}>
                     <button className="btn btn-ghost" style={{ fontSize:12, padding:"5px 12px" }} onClick={()=>setEditing(true)}>Editar</button>
                     <button style={{ fontSize:12, padding:"5px 12px", borderRadius:8, background:"#FFE8E8", color:"#900", border:"1.5px solid #C00", cursor:"pointer", fontFamily:"inherit", fontWeight:700 }} onClick={deleteReview} disabled={guardando}>Eliminar</button>
@@ -515,6 +549,7 @@ function SerieModal({ serie, poster, stats, vista, pendiente, rating, user, onCl
 }
 
 function Feed({ user, onShowAuth, series }) {
+  const [seccion, setSeccion] = useState("feed");   // feed | listas
   const [ambito, setAmbito]     = useState("todos");   // todos | siguiendo
   const [seguidos, setSeguidos] = useState(null);
   const [busca, setBusca]       = useState("");
@@ -581,6 +616,24 @@ function Feed({ user, onShowAuth, series }) {
     <div className="page-enter">
       <h2 className="font-display" style={{ fontSize:34, color:"var(--accent)", marginBottom:"1rem" }}>🌐 Comunidad</h2>
 
+      <div className="sort-bar" role="tablist" style={{ marginBottom:"1.1rem" }}>
+        {[
+          { id:"feed",   label:"⚡ Actividad" },
+          { id:"listas", label:"📋 Listas" },
+        ].map(t=>(
+          <button key={t.id} role="tab" aria-selected={seccion===t.id}
+                  className={`sort-btn${seccion===t.id?" active":""}`}
+                  onClick={()=>setSeccion(t.id)}>{t.label}</button>
+        ))}
+      </div>
+
+      {seccion === "listas" && (
+        <Suspense fallback={<div className="skeleton" style={{ height:240 }}/>}>
+          <ListasComunidad user={user} onShowAuth={onShowAuth} />
+        </Suspense>
+      )}
+
+      {seccion === "feed" && <>
       {/* Buscar gente a la que seguir */}
       <div style={{ position:"relative", marginBottom:"1rem" }}>
         <input className="input" type="search" value={busca}
@@ -642,6 +695,7 @@ function Feed({ user, onShowAuth, series }) {
             );
           })
       }
+      </>}
     </div>
   );
 }
